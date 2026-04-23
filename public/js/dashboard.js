@@ -211,11 +211,11 @@ function renderDetail(site) {
           <div class="ip-cell">
             <span class="ip-text ${ip.highlighted ? 'eyesee' : ''}">${ip.fullIp}</span>
             ${portHtml}
-            <button class="copy-btn" onclick="copyText('${ip.fullIp}',this)">${iconCopy()} Salin</button>
+            
           </div>
         </td>
         <td class="act-col">
-          <button class="tbl-btn" onclick="copyText('${ip.ip}',this)">${iconCopy()} IP Only</button>
+          <button class="tbl-btn" onclick="copyText('${ip.ip}',this)">${iconCopy()} Salin</button>
           <button class="tbl-btn tbl-btn-edit" onclick="openEdit('${site.siteCode}','${ip.appKey}','${esc(ip.appName)}','${ip.ip}','${ip.subnet}',${ip.port || 'null'},'${esc(ip.note || '')}')">
             ${iconEdit()} Edit
           </button>
