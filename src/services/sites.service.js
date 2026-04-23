@@ -43,10 +43,11 @@ const IP_INCLUDE = {
 // ── READ ─────────────────────────────────────────────────────────────────────
 
 async function getAllSites() {
-  return prisma.site.findMany({
-    select: { siteCode: true, siteName: true, blockIp: true, description: true },
+  const sites = await prisma.site.findMany({
+    include: IP_INCLUDE,
     orderBy: { siteCode: 'asc' },
   });
+  return sites.map(formatSiteDetail);
 }
 
 async function getSiteByCode(rawCode) {
