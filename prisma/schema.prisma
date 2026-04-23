@@ -1,0 +1,77 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ── Enum ─────────────────────────────────────────────
+enum AppCategory {
+  SERVER
+  APP
+}
+
+// ── Site: 22 titik lokasi ─────────────────────────────
+model Site {
+  id          Int      @id @default(autoincrement())
+  siteCode    String   @unique @map("site_code") @db.VarChar(10)
+  siteName    String   @map("site_name") @db.VarChar(100)
+  blockIp     String   @map("block_ip") @db.VarChar(20)
+  description String?  @db.Text
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  ips SiteIp[]
+
+  @@map("sites")
+}
+
+// ── AppType: 8 jenis kebutuhan (Router, BMS, BLM, dll) ─
+model AppType {
+  id            Int         @id @default(autoincrement())
+  key           String      @unique @db.VarChar(50)
+  name          String      @db.VarChar(100)
+  type          AppCategory
+  sortOrder     Int         @default(0) @map("sort_order")
+  isHighlighted Boolean     @default(false) @map("is_highlighted")
+
+  siteIps SiteIp[]
+
+  @@map("app_types")
+}
+
+// ── SiteIp: IP per app per site (22 × 8 = 176 rows) ───
+model SiteIp {
+  id          Int      @id @default(autoincrement())
+  siteId      Int      @map("site_id")
+  appTypeId   Int      @map("app_type_id")
+  ipAddress   String   @map("ip_address") @db.VarChar(20)
+  subnet      String   @default("/27") @db.VarChar(5)
+  port        Int?
+  note        String?  @db.Text
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  site    Site    @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  appType AppType @relation(fields: [appTypeId], references: [id])
+
+  @@unique([siteId, appTypeId])
+  @@map("site_ips")
+}
+
+// ── User: admin accounts for dashboard login ───────────
+model User {
+  id           Int      @id @default(autoincrement())
+  username     String   @unique @db.VarChar(50)
+  passwordHash String   @map("password_hash") @db.VarChar(255)
+  displayName  String   @map("display_name") @db.VarChar(100)
+  role         String   @default("admin") @db.VarChar(20)
+  isActive     Boolean  @default(true) @map("is_active")
+  lastLoginAt  DateTime? @map("last_login_at")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@map("users")
+}

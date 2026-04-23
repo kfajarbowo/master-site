@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Master IP</title>
+  <meta name="description" content="Master IP Address Management System  — 22 titik site dengan data server dan aplikasi">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/dashboard.css">
+</head>
+<body>
+<div class="root">
+
+  <!-- HEADER -->
+  <header class="header">
+    <!-- <div class="logo">
+      <svg viewBox="0 0 24 24"><path d="M12 2L3 7v10l9 5 9-5V7L12 2zm0 2.18L19 8.3v7.4l-7 3.89-7-3.89V8.3L12 4.18zM12 7a1 1 0 100 2 1 1 0 000-2zm-4 3v1h2v-1H8zm8 0v1h-2v-1h2zm-4 1a3 3 0 100 6 3 3 0 000-6zm0 2a1 1 0 110 2 1 1 0 010-2z"/></svg>
+    </div> -->
+    <div class="brand">
+      <h1>Master Data-IP</h1>
+      <p>Master IP Address Management System</p>
+    </div>
+    <div class="stats">
+      <div class="stat"><span class="stat-val" id="hd-sites">—</span><span class="stat-lbl">Sites</span></div>
+      <div class="stat"><span class="stat-val">8</span><span class="stat-lbl">Types</span></div>
+      <div class="stat"><span class="stat-val" id="hd-total">—</span><span class="stat-lbl">Total IP</span></div>
+    </div>
+    <div class="user-bar">
+      <div class="user-badge">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <span id="hd-user">—</span>
+      </div>
+      <button class="btn-logout" id="btn-logout" onclick="doLogout()" title="Logout">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        Logout
+      </button>
+    </div>
+  </header>
+
+  <!-- BODY -->
+  <div class="body">
+    <aside class="sidebar">
+      <div class="sidebar-top">
+        <div class="search-wrap">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" id="search" placeholder="Cari site atau IP..." autocomplete="off" spellcheck="false">
+        </div>
+        <div class="count-lbl" id="count-lbl">Memuat...</div>
+      </div>
+      <div class="site-list" id="site-list"></div>
+    </aside>
+    <main class="content" id="content"></main>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast-wrap"></div>
+
+<!-- EDIT IP MODAL -->
+<div class="modal-backdrop" id="edit-modal" role="dialog" aria-modal="true">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modal-title">Edit IP Address</div>
+      <button class="modal-close" onclick="closeModal()" title="Tutup">&times;</button>
+    </div>
+    <form id="edit-form" onsubmit="submitEdit(event)">
+      <input type="hidden" id="edit-site-code">
+      <input type="hidden" id="edit-app-key">
+      <div class="form-group">
+        <label class="form-label" for="edit-app-name">Aplikasi</label>
+        <input class="form-input" id="edit-app-name" type="text" disabled>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="edit-ip">IP Address <span style="color:var(--red)">*</span></label>
+        <input class="form-input" id="edit-ip" type="text" placeholder="172.27.0.1" required autocomplete="off">
+        <div class="form-hint">Contoh: 172.27.0.1 (tanpa subnet)</div>
+        <div class="form-err" id="err-ip">Format IP tidak valid</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="edit-subnet">Subnet</label>
+        <input class="form-input" id="edit-subnet" type="text" placeholder="/27">
+        <div class="form-hint">Default /27</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="edit-port">Port</label>
+        <input class="form-input" id="edit-port" type="number" placeholder="Kosongkan jika tidak ada" min="1" max="65535">
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="edit-note">Catatan</label>
+        <input class="form-input" id="edit-note" type="text" placeholder="Opsional">
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-ghost" onclick="closeModal()">Batal</button>
+        <button type="submit" class="btn btn-primary" id="btn-save">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+          Simpan
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script src="/js/dashboard.js"></script>
+</body>
+</html>

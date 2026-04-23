@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login — Master IP</title>
+  <meta name="description" content="Login ke Master IP Address Management System">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/login.css">
+</head>
+<body>
+
+<div class="card" role="main">
+
+  <div class="logo-wrap">
+    <!-- <div class="logo">
+      <svg viewBox="0 0 24 24"><path d="M12 2L3 7v10l9 5 9-5V7L12 2zm0 2.18L19 8.3v7.4l-7 3.89-7-3.89V8.3L12 4.18zM12 7a1 1 0 100 2 1 1 0 000-2zm-4 3v1h2v-1H8zm8 0v1h-2v-1h2zm-4 1a3 3 0 100 6 3 3 0 000-6zm0 2a1 1 0 110 2 1 1 0 010-2z"/></svg>
+    </div> -->
+    <div>
+      <div class="brand-name">Master Data-IP</div>
+      <div class="brand-sub">Master IP Address Management System</div>
+    </div>
+  </div>
+
+  <h1 class="card-title">Selamat Datang 👋</h1>
+  <p class="card-sub">Masuk untuk mengelola data IP Address seluruh site.</p>
+
+  <!-- Error alert -->
+  <div class="error-alert" id="error-alert" role="alert">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+    </svg>
+    <span id="error-msg">Username atau password salah.</span>
+  </div>
+
+  <form id="login-form" novalidate>
+    <div class="form-group">
+      <label class="form-label" for="username">Username</label>
+      <div class="input-wrap">
+        <input
+          class="form-input" id="username" type="text"
+          placeholder="Masukkan username" autocomplete="username"
+          autocapitalize="none" spellcheck="false" required
+        >
+        <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/>
+        </svg>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" for="password">Password</label>
+      <div class="input-wrap">
+        <input
+          class="form-input" id="password" type="password"
+          placeholder="Masukkan password" autocomplete="current-password" required
+        >
+        <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+          <path d="M7 11V7a5 5 0 0110 0v4"/>
+        </svg>
+        <button type="button" class="pwd-toggle" id="pwd-toggle" aria-label="Tampilkan password">
+          <svg id="eye-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+            <circle cx="12" cy="12" r="3"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <button type="submit" class="btn-submit" id="btn-submit">
+      <div class="spinner" id="spinner"></div>
+      <svg id="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4"/>
+        <polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/>
+      </svg>
+      <span id="btn-label">Masuk</span>
+    </button>
+  </form>
+
+  <div class="card-footer">
+    Sistem internal COLABORATYER &mdash; akses terbatas.<br>
+    Hubungi <strong>Administrator</strong> jika lupa password.
+  </div>
+</div>
+
+<script src="/js/login.js"></script>
+</body>
+</html>
