@@ -16,6 +16,7 @@ const { notFound }      = require('./middlewares/notFound');
 const { requestLogger } = require('./middlewares/requestLogger');
 
 const app = express();
+app.set('trust proxy', 1);
 
 // ── Security ────────────────────────────────────────────────────────────────
 // Disable CSP so the static dashboard can load Google Fonts, inline scripts, etc.
