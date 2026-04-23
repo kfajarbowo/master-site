@@ -53,11 +53,9 @@ async function login(req, res, next) {
  * POST /auth/logout
  */
 function logout(req, res, next) {
-  req.session.destroy((err) => {
-    if (err) return next(err);
-    res.clearCookie('connect.sid');
-    return res.json({ status: 'success', message: 'Logged out.' });
-  });
+  req.session = null;
+  res.clearCookie('session');
+  return res.json({ status: 'success', message: 'Logged out.' });
 }
 
 /**

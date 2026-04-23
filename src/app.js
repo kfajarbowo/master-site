@@ -6,7 +6,7 @@ const express    = require('express');
 const cors       = require('cors');
 const helmet     = require('helmet');
 const rateLimit  = require('express-rate-limit');
-const session    = require('express-session');
+const session    = require('cookie-session');
 const path       = require('path');
 
 const { env }           = require('./config/env');
@@ -39,15 +39,12 @@ app.use(express.urlencoded({ extended: false }));
 // ── Session ──────────────────────────────────────────────────────────────────
 app.use(
   session({
-    secret:            env.SESSION_SECRET,
-    resave:            false,
-    saveUninitialized: false,
-    cookie: {
-      httpOnly: true,
-      secure:   env.NODE_ENV === 'production', // HTTPS only in prod
-      sameSite: 'lax',
-      maxAge:   8 * 60 * 60 * 1000,           // 8 hours
-    },
+    name:     'session',
+    keys:     [env.SESSION_SECRET],
+    httpOnly: true,
+    secure:   env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    maxAge:   8 * 60 * 60 * 1000, // 8 hours
   })
 );
 
