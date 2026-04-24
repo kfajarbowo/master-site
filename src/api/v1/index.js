@@ -45,9 +45,10 @@ function dualAuth(req, res, next) {
   return next(createError(401, 'Authentication required. Use session login or X-API-Key header.'));
 }
 
-router.use(dualAuth);
-
-// ── Protected resource routes ─────────────────────────────────────────────
-router.use('/sites', sitesRoutes);
+// ── Protected resource routes (GET is public, Mutation is protected) ───────
+router.use('/sites', (req, res, next) => {
+  if (req.method === 'GET') return next();
+  return dualAuth(req, res, next);
+}, sitesRoutes);
 
 module.exports = router;
