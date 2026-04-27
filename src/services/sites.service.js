@@ -42,9 +42,30 @@ const IP_INCLUDE = {
 
 // ── READ ─────────────────────────────────────────────────────────────────────
 
-async function getAllSites() {
+async function getAllSites(filters = {}) {
+  // Build dynamic IP filter
+  const ipWhere = {};
+  if (filters.type) {
+    ipWhere.appType = { ...ipWhere.appType, type: filters.type.toUpperCase() };
+  }
+  if (filters.app) {
+    ipWhere.appType = { ...ipWhere.appType, key: filters.app.toLowerCase() };
+  }
+
+  const hasIpFilter = Object.keys(ipWhere).length > 0;
+
   const sites = await prisma.site.findMany({
-    include: IP_INCLUDE,
+    include: {
+      ips: {
+        where: hasIpFilter ? ipWhere : undefined,
+        include: {
+          appType: {
+            select: { key: true, name: true, type: true, isHighlighted: true, sortOrder: true },
+          },
+        },
+        orderBy: { appType: { sortOrder: 'asc' } },
+      },
+    },
     orderBy: { siteCode: 'asc' },
   });
   return sites.map(formatSiteDetail);

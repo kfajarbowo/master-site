@@ -6,7 +6,8 @@ const { success }     = require('../utils/response');
 // ── READ ──────────────────────────────────────────────────────
 async function listSites(req, res, next) {
   try {
-    const sites = await svc.getAllSites();
+    const filters = { type: req.query.type, app: req.query.app };
+    const sites = await svc.getAllSites(filters);
     return success(res, sites, 200, { total: sites.length });
   } catch (err) { next(err); }
 }
