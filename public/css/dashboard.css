@@ -1135,6 +1135,92 @@ body::before {
   }
 }
 
+/* ── Create Site Modal ─────────────────────────────── */
+.modal-lg {
+  max-width: 640px;
+  max-height: 85vh;
+  overflow-y: auto;
+}
+
+.modal-lg::-webkit-scrollbar {
+  width: 4px;
+}
+
+.modal-lg::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 4px;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.btn-sm {
+  padding: 5px 12px;
+  font-size: .72rem;
+}
+
+.btn-sm svg {
+  width: 12px;
+  height: 12px;
+}
+
+.create-ips-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 280px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.create-ips-list::-webkit-scrollbar {
+  width: 3px;
+}
+
+.create-ips-list::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}
+
+.create-ip-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 72px;
+  gap: 8px;
+  align-items: center;
+  padding: 6px 8px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
+.cip-app {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.cip-name {
+  font-size: .76rem;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cip-ip,
+.cip-port {
+  padding: 6px 8px !important;
+  font-size: .78rem !important;
+}
+
+.cip-port {
+  text-align: center;
+}
+
 /* ── Responsive ────────────────────────────────────── */
 @media (max-width: 768px) {
   body {
@@ -1177,5 +1263,24 @@ body::before {
 
   .sites-grid {
     grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  }
+
+  .modal-lg {
+    max-width: 100%;
+    margin: 0 8px;
+    max-height: 90vh;
+  }
+
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+
+  .create-ip-row {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+
+  .cip-port {
+    width: 100%;
   }
 }

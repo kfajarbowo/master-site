@@ -1,0 +1,44 @@
+services:
+  app:
+    image: master-ip:latest
+    container_name: master-ip
+    restart: unless-stopped
+    ports:
+      - "3003:3003"
+    environment:
+      - NODE_ENV=production
+      - PORT=3003
+      - DATABASE_URL=postgresql://masterip:masterip_secret@db:5432/master_ip_db
+      - DIRECT_URL=postgresql://masterip:masterip_secret@db:5432/master_ip_db
+      - API_KEY=${API_KEY:-changeme-in-production}
+      - SESSION_SECRET=${SESSION_SECRET:-changeme-session-secret-in-production}
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - master-ip-net
+
+  db:
+    image: postgres:15-alpine
+    container_name: master-ip-db
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=masterip
+      - POSTGRES_PASSWORD=masterip_secret
+      - POSTGRES_DB=master_ip_db
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U masterip -d master_ip_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - master-ip-net
+
+volumes:
+  pgdata:
+
+networks:
+  master-ip-net:
+    driver: bridge
