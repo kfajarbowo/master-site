@@ -5,8 +5,10 @@ const API_BASE = '/api/v1';
 
 // ── State ───────────────────────────────────────────────────────
 let allSites = [];
+let allRegions = []; // cached regions list
 let activeCode = null;
 let searchQuery = '';
+let activeRegion = ''; // region filter code (empty = all)
 let appTypesList = []; // cached app types for create modal
 
 // ── Auth guard — redirect to login if not authenticated ─────────
@@ -64,14 +66,23 @@ async function api(path, options = {}) {
 
 // ── Filtering ───────────────────────────────────────────────────
 function filtered() {
-	if (!searchQuery) return allSites;
-	const q = searchQuery.toLowerCase();
-	return allSites.filter(
-		s =>
-			s.siteCode.toLowerCase().includes(q) ||
-			s.siteName.toLowerCase().includes(q) ||
-			s.blockIp.includes(q)
-	);
+	let list = allSites;
+	// Region filter
+	if (activeRegion) {
+		list = list.filter(s => s.regionCode === activeRegion);
+	}
+	// Search filter
+	if (searchQuery) {
+		const q = searchQuery.toLowerCase();
+		list = list.filter(
+			s =>
+				s.siteCode.toLowerCase().includes(q) ||
+				s.siteName.toLowerCase().includes(q) ||
+				s.blockIp.includes(q) ||
+				(s.regionName && s.regionName.toLowerCase().includes(q))
+		);
+	}
+	return list;
 }
 
 // ── Init ────────────────────────────────────────────────────────
@@ -83,13 +94,20 @@ async function init() {
 	renderSidebarLoading();
 	renderGridLoading();
 	try {
-		const { data, meta } = await api('/sites');
+		// Load regions first (for filter dropdown)
+		const regionsRes = await api('/regions');
+		if (!regionsRes) return;
+		allRegions = regionsRes.data || [];
+		populateRegionFilter();
+
+		// Load sites with region info
+		const { data, meta } = await api('/sites?includeRegion=true');
 		if (!data) return; // redirected
 		allSites = data;
 		document.getElementById('hd-sites').textContent = meta.total;
 		document.getElementById('hd-total').textContent = meta.total * 8;
-		renderSidebar(allSites);
-		renderGrid(allSites);
+		renderSidebar(filtered());
+		renderGrid(filtered());
 		// Cache app types for create modal (lazy load)
 		if (!appTypesList.length) {
 			api('/apps')
@@ -113,6 +131,29 @@ document.getElementById('search').addEventListener('input', function () {
 	renderSidebar(list);
 	if (!activeCode) renderGrid(list);
 });
+
+// ── Region filter ───────────────────────────────────────────────
+document
+	.getElementById('region-filter')
+	.addEventListener('change', function () {
+		activeRegion = this.value;
+		const list = filtered();
+		renderSidebar(list);
+		if (!activeCode) renderGrid(list);
+	});
+
+function populateRegionFilter() {
+	const select = document.getElementById('region-filter');
+	select.innerHTML = '<option value="">Semua Region</option>';
+	allRegions.forEach(r => {
+		const opt = document.createElement('option');
+		opt.value = r.regionCode;
+		opt.textContent = `${r.regionCode} — ${r.regionName}`;
+		select.appendChild(opt);
+	});
+	// Restore previous selection if exists
+	if (activeRegion) select.value = activeRegion;
+}
 
 // ── Sidebar ─────────────────────────────────────────────────────
 function renderSidebarLoading() {
@@ -138,7 +179,11 @@ function renderSidebar(sites) {
          onclick="selectSite('${s.siteCode}')">
       <div class="si-badge">${s.siteCode.replace('SITE-', '')}</div>
       <div class="si-info">
-        <div class="si-code">${s.siteCode}</div>
+        <div class="si-code">${s.siteCode}${
+				s.regionCode
+					? ` <span class="si-region">${esc(s.regionCode)}</span>`
+					: ''
+			}</div>
         <div class="si-name">${s.siteName}</div>
         <div class="si-ip">${s.blockIp}</div>
       </div>
@@ -170,7 +215,14 @@ function renderGrid(sites) {
 				.map(
 					s => `
         <div class="grid-card" onclick="selectSite('${s.siteCode}')">
-          <div class="gc-code">${s.siteCode}</div>
+          <div class="gc-top-row">
+            <div class="gc-code">${s.siteCode}</div>
+            ${
+							s.regionCode
+								? `<span class="gc-region-badge">${esc(s.regionCode)}</span>`
+								: ''
+						}
+          </div>
           <div class="gc-name">${s.siteName}</div>
           <div class="gc-ip">${s.blockIp}</div>
           <div class="gc-dots">
@@ -192,19 +244,23 @@ function renderGrid(sites) {
 		  )}</strong>"</div>`;
 
 	document.getElementById('content').innerHTML = `
-    <div class="all-sites-view">
-      <div class="section-header">
-        <div class="section-bar"></div>
-        <div class="section-title">Semua Site</div>
-        <span class="section-count">${sites.length} site</span>
-        <button class="btn btn-primary btn-sm" onclick="openCreateModal()" style="margin-left:auto">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          Tambah Site
-        </button>
-      </div>
-      <div class="sites-grid">${cards}</div>
-    </div>
-  `;
+	   <div class="all-sites-view">
+	     <div class="section-header">
+	       <div class="section-bar"></div>
+	       <div class="section-title">Semua Site</div>
+	       <span class="section-count">${sites.length} site</span>
+	       <button class="btn btn-ghost btn-sm" onclick="openRegionModal()" style="margin-left:auto">
+	         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+	         Region
+	       </button>
+	       <button class="btn btn-primary btn-sm" onclick="openCreateModal()">
+	         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+	         Tambah Site
+	       </button>
+	     </div>
+	     <div class="sites-grid">${cards}</div>
+	   </div>
+	 `;
 }
 
 // ── Select site ─────────────────────────────────────────────────
@@ -226,7 +282,7 @@ async function selectSite(code) {
   `;
 
 	try {
-		const { data } = await api(`/sites/${code}`);
+		const { data } = await api(`/sites/${code}?includeRegion=true`);
 		renderDetail(data);
 	} catch (err) {
 		renderError(err.message);
@@ -296,6 +352,12 @@ function renderDetail(site) {
           <div class="block-badge">Block IP: ${site.blockIp}</div>
         </div>
         <div class="detail-actions">
+          <button class="btn btn-ghost" onclick="openAssignRegionModal('${
+						site.siteCode
+					}','${esc(site.regionCode || '')}','${esc(site.regionName || '')}')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            Region
+          </button>
           <button class="btn btn-ghost" onclick="copyAllIPs()">${iconCopy()} Salin Semua</button>
           <button class="btn btn-danger" onclick="deleteSite('${
 						site.siteCode
@@ -312,8 +374,12 @@ function renderDetail(site) {
 					site.blockIp
 				}</div></div>
         <div class="info-card"><div class="ic-label">Subnet Mask</div><div class="ic-value">255.255.255.224</div></div>
-       
         <div class="info-card"><div class="ic-label">Default Gateway</div><div class="ic-value cyan">${gateway}</div></div>
+        <div class="info-card"><div class="ic-label">Region</div><div class="ic-value green">${
+					site.regionName
+						? esc(site.regionName)
+						: '<span style="color:var(--text-3)">—</span>'
+				}</div></div>
       </div>
 
       <div class="section-header">
@@ -446,7 +512,7 @@ async function submitEdit(e) {
 		closeModal();
 		toast('IP berhasil diperbarui!');
 		// Reload detail
-		const { data } = await api(`/sites/${siteCode}`);
+		const { data } = await api(`/sites/${siteCode}?includeRegion=true`);
 		renderDetail(data);
 	} catch (err) {
 		toast(err.message, 'err');
@@ -465,6 +531,16 @@ function openCreateModal() {
 	document.getElementById('create-description').value = '';
 	document.getElementById('err-create-block-ip').classList.remove('show');
 	document.getElementById('create-block-ip').classList.remove('err');
+
+	// Populate region dropdown
+	const regionSelect = document.getElementById('create-region');
+	regionSelect.innerHTML = '<option value="">— Tanpa Region —</option>';
+	allRegions.forEach(r => {
+		const opt = document.createElement('option');
+		opt.value = r.id;
+		opt.textContent = `${r.regionCode} — ${r.regionName}`;
+		regionSelect.appendChild(opt);
+	});
 
 	// Build IP rows for each app type
 	const list = document.getElementById('create-ips-list');
@@ -545,6 +621,8 @@ async function submitCreate(e) {
 	const description = document
 		.getElementById('create-description')
 		.value.trim();
+	const regionId = document.getElementById('create-region').value;
+	const regionIdInt = regionId ? parseInt(regionId, 10) : null;
 
 	// Validate block IP (simple CIDR check)
 	const cidrRe = /^(\d{1,3}\.){3}\d{1,3}\/\d{1,2}$/;
@@ -586,17 +664,18 @@ async function submitCreate(e) {
 				siteName,
 				blockIp,
 				description: description || null,
+				regionId: regionIdInt,
 				ips,
 			}),
 		});
 		closeCreateModal();
 		toast('Site berhasil dibuat!');
 		// Reload all sites
-		const { data, meta } = await api('/sites');
+		const { data, meta } = await api('/sites?includeRegion=true');
 		allSites = data;
 		document.getElementById('hd-sites').textContent = meta.total;
 		document.getElementById('hd-total').textContent = meta.total * 8;
-		renderSidebar(allSites);
+		renderSidebar(filtered());
 		// Navigate to the newly created site detail
 		selectSite(siteCode);
 	} catch (err) {
@@ -619,12 +698,12 @@ async function deleteSite(siteCode, siteName) {
 		// Go back to grid and reload
 		activeCode = null;
 		window.__currentSite = null;
-		const { data, meta } = await api('/sites');
+		const { data, meta } = await api('/sites?includeRegion=true');
 		allSites = data;
 		document.getElementById('hd-sites').textContent = meta.total;
 		document.getElementById('hd-total').textContent = meta.total * 8;
-		renderSidebar(allSites);
-		renderGrid(allSites);
+		renderSidebar(filtered());
+		renderGrid(filtered());
 	} catch (err) {
 		toast(err.message, 'err');
 	}
@@ -728,6 +807,321 @@ function esc(str) {
 	const d = document.createElement('div');
 	d.textContent = String(str);
 	return d.innerHTML;
+}
+
+// ── Region CRUD modal ────────────────────────────────────────────
+function openRegionModal() {
+	// Show list, hide form
+	document.getElementById('region-list-container').style.display = '';
+	document.getElementById('region-form-container').style.display = 'none';
+	renderRegionList();
+	document.getElementById('region-modal').classList.add('open');
+}
+
+function closeRegionModal() {
+	document.getElementById('region-modal').classList.remove('open');
+}
+
+// Close region modal on backdrop click
+document.getElementById('region-modal').addEventListener('click', function (e) {
+	if (e.target === this) closeRegionModal();
+});
+
+function renderRegionList() {
+	const container = document.getElementById('region-list');
+	if (!allRegions.length) {
+		container.innerHTML =
+			'<div class="region-empty">Belum ada region. Tambahkan region pertama.</div>';
+		return;
+	}
+	container.innerHTML = allRegions
+		.map(
+			r => `
+      <div class="region-item">
+        <div class="ri-info">
+          <div class="ri-code">${esc(r.regionCode)}</div>
+          <div class="ri-name">${esc(r.regionName)}</div>
+          <div class="ri-desc">${r.description ? esc(r.description) : ''}</div>
+        </div>
+        <div class="ri-actions">
+          <button class="tbl-btn" onclick="editRegionItem('${esc(
+						r.regionCode
+					)}')">${iconEdit()} Edit</button>
+          <button class="tbl-btn tbl-btn-edit" style="color:var(--red);border-color:#fecaca" onclick="deleteRegionItem('${esc(
+						r.regionCode
+					)}','${esc(r.regionName)}')">${iconTrash()} Hapus</button>
+        </div>
+      </div>
+    `
+		)
+		.join('');
+}
+
+function openAddRegionForm() {
+	document.getElementById('region-edit-code').value = '';
+	document.getElementById('region-code').value = '';
+	document.getElementById('region-code').disabled = false;
+	document.getElementById('region-name').value = '';
+	document.getElementById('region-description').value = '';
+	document.getElementById('region-form-title').textContent =
+		'Tambah Region Baru';
+	document.getElementById('region-list-container').style.display = 'none';
+	document.getElementById('region-form-container').style.display = '';
+}
+
+function editRegionItem(code) {
+	const region = allRegions.find(r => r.regionCode === code);
+	if (!region) return;
+	document.getElementById('region-edit-code').value = region.regionCode;
+	document.getElementById('region-code').value = region.regionCode;
+	document.getElementById('region-code').disabled = true; // can't change code on edit
+	document.getElementById('region-name').value = region.regionName;
+	document.getElementById('region-description').value =
+		region.description || '';
+	document.getElementById(
+		'region-form-title'
+	).textContent = `Edit Region — ${region.regionCode}`;
+	document.getElementById('region-list-container').style.display = 'none';
+	document.getElementById('region-form-container').style.display = '';
+}
+
+function cancelRegionForm() {
+	document.getElementById('region-list-container').style.display = '';
+	document.getElementById('region-form-container').style.display = 'none';
+}
+
+async function submitRegionForm(e) {
+	e.preventDefault();
+	const editCode = document.getElementById('region-edit-code').value;
+	const regionCode = document
+		.getElementById('region-code')
+		.value.trim()
+		.toUpperCase();
+	const regionName = document.getElementById('region-name').value.trim();
+	const description = document
+		.getElementById('region-description')
+		.value.trim();
+
+	if (!regionCode || !regionName) {
+		toast('Region Code dan Nama wajib diisi.', 'err');
+		return;
+	}
+
+	const btn = document.getElementById('btn-region-save');
+	btn.disabled = true;
+	btn.textContent = 'Menyimpan...';
+
+	try {
+		if (editCode) {
+			// Update existing region
+			await api(`/regions/${editCode}`, {
+				method: 'PUT',
+				body: JSON.stringify({ regionName, description: description || null }),
+			});
+			toast('Region berhasil diperbarui!');
+		} else {
+			// Create new region
+			await api('/regions', {
+				method: 'POST',
+				body: JSON.stringify({
+					regionCode,
+					regionName,
+					description: description || null,
+				}),
+			});
+			toast('Region berhasil dibuat!');
+		}
+
+		// Reload regions
+		const regionsRes = await api('/regions');
+		allRegions = regionsRes.data || [];
+		populateRegionFilter();
+
+		// Also reload sites to update region info
+		const { data, meta } = await api('/sites?includeRegion=true');
+		allSites = data;
+		document.getElementById('hd-sites').textContent = meta.total;
+		document.getElementById('hd-total').textContent = meta.total * 8;
+
+		cancelRegionForm();
+		renderRegionList();
+	} catch (err) {
+		toast(err.message, 'err');
+	} finally {
+		btn.disabled = false;
+		btn.innerHTML = `${iconSave()} Simpan`;
+	}
+}
+
+async function deleteRegionItem(code, name) {
+	const confirmed = await confirmDeleteRegion(code, name);
+	if (!confirmed) return;
+
+	try {
+		await api(`/regions/${code}`, { method: 'DELETE' });
+		toast(`Region ${code} berhasil dihapus!`);
+
+		// Reload regions
+		const regionsRes = await api('/regions');
+		allRegions = regionsRes.data || [];
+		populateRegionFilter();
+
+		// Also reload sites (regionId will be set to null)
+		const { data, meta } = await api('/sites?includeRegion=true');
+		allSites = data;
+		document.getElementById('hd-sites').textContent = meta.total;
+		document.getElementById('hd-total').textContent = meta.total * 8;
+
+		renderRegionList();
+	} catch (err) {
+		toast(err.message, 'err');
+	}
+}
+
+function confirmDeleteRegion(code, name) {
+	return new Promise(resolve => {
+		const backdrop = document.createElement('div');
+		backdrop.className = 'modal-backdrop open';
+		backdrop.style.zIndex = '600';
+		backdrop.innerHTML = `
+      <div class="modal" style="max-width:400px;text-align:center">
+        <div style="margin-bottom:16px">
+          <div style="width:48px;height:48px;border-radius:50%;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);display:inline-flex;align-items:center;justify-content:center;margin-bottom:12px">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+          </div>
+          <h3 style="font-size:1rem;margin-bottom:6px">Hapus Region?</h3>
+          <p style="font-size:.82rem;color:var(--text-2);line-height:1.5">
+            Region <strong style="color:var(--cyan)">${esc(
+							code
+						)}</strong> — ${esc(name)}<br>
+            <span style="color:var(--red);font-size:.72rem">Site yang terhubung akan kehilangan asosiasi region. Aksi ini tidak dapat dibatalkan.</span>
+          </p>
+        </div>
+        <div style="display:flex;gap:8px;justify-content:center">
+          <button class="btn btn-ghost" id="del-reg-cancel">Batal</button>
+          <button class="btn btn-danger" id="del-reg-confirm">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+            Hapus
+          </button>
+        </div>
+      </div>
+    `;
+		document.body.appendChild(backdrop);
+
+		backdrop.querySelector('#del-reg-cancel').addEventListener('click', () => {
+			backdrop.remove();
+			resolve(false);
+		});
+		backdrop.querySelector('#del-reg-confirm').addEventListener('click', () => {
+			backdrop.remove();
+			resolve(true);
+		});
+		backdrop.addEventListener('click', e => {
+			if (e.target === backdrop) {
+				backdrop.remove();
+				resolve(false);
+			}
+		});
+	});
+}
+
+// ── Assign site to region ────────────────────────────────────────
+function openAssignRegionModal(siteCode, currentRegionCode, currentRegionName) {
+	// Build a simple modal for assigning region
+	const backdrop = document.createElement('div');
+	backdrop.className = 'modal-backdrop open';
+	backdrop.style.zIndex = '500';
+	backdrop.innerHTML = `
+    <div class="modal" style="max-width:400px">
+      <div class="modal-header">
+        <div class="modal-title">Assign Region — ${siteCode}</div>
+        <button class="modal-close" id="assign-close">&times;</button>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Region Saat Ini</label>
+        <div style="font-size:.85rem;color:var(--text-2);margin-bottom:12px">
+          ${
+						currentRegionCode
+							? `<span class="gc-region-badge">${esc(
+									currentRegionCode
+							  )}</span> ${esc(currentRegionName)}`
+							: '<span style="color:var(--text-3)">Belum diassign</span>'
+					}
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="assign-region-select">Pilih Region</label>
+        <select class="form-input region-select-modal" id="assign-region-select">
+          <option value="">— Tanpa Region —</option>
+          ${allRegions
+						.map(
+							r =>
+								`<option value="${r.regionCode}" ${
+									r.regionCode === currentRegionCode ? 'selected' : ''
+								}>${esc(r.regionCode)} — ${esc(r.regionName)}</option>`
+						)
+						.join('')}
+        </select>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" id="assign-cancel">Batal</button>
+        <button class="btn btn-primary" id="assign-save">
+          ${iconSave()} Simpan
+        </button>
+      </div>
+    </div>
+  `;
+	document.body.appendChild(backdrop);
+
+	const closeModal = () => {
+		backdrop.remove();
+	};
+
+	backdrop.querySelector('#assign-close').addEventListener('click', closeModal);
+	backdrop
+		.querySelector('#assign-cancel')
+		.addEventListener('click', closeModal);
+	backdrop.addEventListener('click', e => {
+		if (e.target === backdrop) closeModal();
+	});
+
+	backdrop.querySelector('#assign-save').addEventListener('click', async () => {
+		const selectedCode = document.getElementById('assign-region-select').value;
+		const selectedRegion = allRegions.find(r => r.regionCode === selectedCode);
+		const regionId = selectedRegion ? selectedRegion.id : null;
+
+		const btn = backdrop.querySelector('#assign-save');
+		btn.disabled = true;
+		btn.textContent = 'Menyimpan...';
+
+		try {
+			await api(`/sites/${siteCode}`, {
+				method: 'PUT',
+				body: JSON.stringify({ regionId }),
+			});
+			closeModal();
+			toast('Region berhasil diassign!');
+
+			// Reload sites
+			const { data, meta } = await api('/sites?includeRegion=true');
+			allSites = data;
+			document.getElementById('hd-sites').textContent = meta.total;
+			document.getElementById('hd-total').textContent = meta.total * 8;
+			renderSidebar(filtered());
+
+			// Reload detail if active
+			if (activeCode === siteCode) {
+				const { data: siteData } = await api(
+					`/sites/${siteCode}?includeRegion=true`
+				);
+				renderDetail(siteData);
+			}
+		} catch (err) {
+			toast(err.message, 'err');
+			btn.disabled = false;
+			btn.innerHTML = `${iconSave()} Simpan`;
+		}
+	});
 }
 
 // ── Start ───────────────────────────────────────────────────────

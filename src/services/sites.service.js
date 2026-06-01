@@ -9,8 +9,8 @@ function normalizeSiteCode(code) {
 	return code.trim().toUpperCase();
 }
 
-function formatSiteDetail(site) {
-	return {
+function formatSiteDetail(site, includeRegion = false) {
+	const result = {
 		siteCode: site.siteCode,
 		siteName: site.siteName,
 		blockIp: site.blockIp,
@@ -27,6 +27,15 @@ function formatSiteDetail(site) {
 			note: ip.note ?? null,
 		})),
 	};
+	// Only add region fields when explicitly requested (backward compat)
+	if (includeRegion && site.region) {
+		result.regionCode = site.region.regionCode;
+		result.regionName = site.region.regionName;
+	} else if (includeRegion) {
+		result.regionCode = null;
+		result.regionName = null;
+	}
+	return result;
 }
 
 const IP_INCLUDE = {
@@ -59,8 +68,16 @@ async function getAllSites(filters = {}) {
 	}
 
 	const hasIpFilter = Object.keys(ipWhere).length > 0;
+	const includeRegion = filters.includeRegion === true;
+
+	// Build region filter
+	const siteWhere = {};
+	if (filters.region) {
+		siteWhere.region = { regionCode: filters.region.toUpperCase() };
+	}
 
 	const sites = await prisma.site.findMany({
+		where: Object.keys(siteWhere).length > 0 ? siteWhere : undefined,
 		include: {
 			ips: {
 				where: hasIpFilter ? ipWhere : undefined,
@@ -77,20 +94,29 @@ async function getAllSites(filters = {}) {
 				},
 				orderBy: { appType: { sortOrder: 'asc' } },
 			},
+			region: includeRegion
+				? { select: { regionCode: true, regionName: true } }
+				: false,
 		},
 		orderBy: { siteCode: 'asc' },
 	});
-	return sites.map(formatSiteDetail);
+	return sites.map(s => formatSiteDetail(s, includeRegion));
 }
 
-async function getSiteByCode(rawCode) {
+async function getSiteByCode(rawCode, includeRegion = false) {
 	const siteCode = normalizeSiteCode(rawCode);
+	const include = {
+		...IP_INCLUDE,
+		region: includeRegion
+			? { select: { regionCode: true, regionName: true } }
+			: false,
+	};
 	const site = await prisma.site.findUnique({
 		where: { siteCode },
-		include: IP_INCLUDE,
+		include,
 	});
 	if (!site) throw createError(404, `Site '${siteCode}' tidak ditemukan.`);
-	return formatSiteDetail(site);
+	return formatSiteDetail(site, includeRegion);
 }
 
 async function getSiteIps(rawCode) {
@@ -168,11 +194,18 @@ async function getSiteIpByAppKey(rawCode, rawAppKey) {
 // ── CREATE ────────────────────────────────────────────────────────────────────
 
 async function createSite(body) {
-	const { siteCode, siteName, blockIp, description, ips } = body;
+	const { siteCode, siteName, blockIp, description, ips, regionId } = body;
 	const code = normalizeSiteCode(siteCode);
 
 	const exists = await prisma.site.findUnique({ where: { siteCode: code } });
 	if (exists) throw createError(409, `Site '${code}' sudah ada.`);
+
+	// Validate regionId if provided
+	if (regionId) {
+		const region = await prisma.region.findUnique({ where: { id: regionId } });
+		if (!region)
+			throw createError(400, `Region dengan id '${regionId}' tidak ditemukan.`);
+	}
 
 	// Get all app types to auto-create IP rows
 	const appTypes = await prisma.appType.findMany({
@@ -197,11 +230,15 @@ async function createSite(body) {
 			siteName,
 			blockIp,
 			description: description || null,
+			regionId: regionId || null,
 			ips: { create: ipEntries },
 		},
-		include: IP_INCLUDE,
+		include: {
+			...IP_INCLUDE,
+			region: { select: { regionCode: true, regionName: true } },
+		},
 	});
-	return formatSiteDetail(site);
+	return formatSiteDetail(site, true);
 }
 
 // ── UPDATE ────────────────────────────────────────────────────────────────────
@@ -211,21 +248,40 @@ async function updateSite(rawCode, body) {
 	const site = await prisma.site.findUnique({ where: { siteCode } });
 	if (!site) throw createError(404, `Site '${siteCode}' tidak ditemukan.`);
 
+	// Validate regionId if provided
+	if (body.regionId !== undefined) {
+		if (body.regionId !== null) {
+			const region = await prisma.region.findUnique({
+				where: { id: body.regionId },
+			});
+			if (!region)
+				throw createError(
+					400,
+					`Region dengan id '${body.regionId}' tidak ditemukan.`
+				);
+		}
+	}
+
 	const updated = await prisma.site.update({
 		where: { siteCode },
 		data: {
 			siteName: body.siteName ?? undefined,
 			blockIp: body.blockIp ?? undefined,
 			description: body.description ?? undefined,
+			regionId: body.regionId !== undefined ? body.regionId : undefined,
 		},
-		select: {
-			siteCode: true,
-			siteName: true,
-			blockIp: true,
-			description: true,
+		include: {
+			region: { select: { regionCode: true, regionName: true } },
 		},
 	});
-	return updated;
+	return {
+		siteCode: updated.siteCode,
+		siteName: updated.siteName,
+		blockIp: updated.blockIp,
+		description: updated.description || null,
+		regionCode: updated.region?.regionCode ?? null,
+		regionName: updated.region?.regionName ?? null,
+	};
 }
 
 async function updateSiteIp(rawCode, rawAppKey, body) {

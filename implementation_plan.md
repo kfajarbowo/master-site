@@ -53,16 +53,21 @@ master-site/
 
 ### [NEW] Database Schema — `prisma/schema.prisma`
 
-**3 tabel utama:**
+**5 tabel utama:**
 
 | Tabel | Fungsi |
 |-------|--------|
 | `Site` | 22 titik lokasi |
 | `AppType` | 8 jenis/tipe (Router, BMS, BLM, dll) |
 | `SiteIp` | Relasi: IP per app per site (22×8 = 176 rows) |
+| `Region` | Wilayah administratif (overlay grouping) |
+| `User` | Admin accounts for dashboard login |
 
 ```
-Site (id, site_code, site_name, block_ip, description)
+Region (id, region_code, region_name, description)
+  └── Site[] (via region_id, ON DELETE SET NULL)
+
+Site (id, site_code, site_name, block_ip, description, region_id)
   └── SiteIp[] (ip_address, subnet, port, note)
          └── AppType (key, name, type: SERVER|APP, sort_order, is_highlighted)
 ```
@@ -77,9 +82,25 @@ Site (id, site_code, site_name, block_ip, description)
 |--------|----------|------------|----------------|
 | `GET` | `/health` | Health check | ✓ |
 | `GET` | `/api/v1/sites` | List semua site (ringkas) | ✓ |
+| `GET` | `/api/v1/sites?includeRegion=true` | List site + region info | ✓ |
+| `GET` | `/api/v1/sites?region=PAPUA` | Filter site by region | ✓ |
 | `GET` | `/api/v1/sites/:code` | Detail site + semua IP | ✓ |
 | `GET` | `/api/v1/sites/:code/ips` | IP list saja (lightweight) | ✓ |
 | `GET` | `/api/v1/sites/:code/ips/:appKey` | IP spesifik 1 app | ✓ |
+| `GET` | `/api/v1/apps` | List semua app types | ✓ |
+| `GET` | `/api/v1/apps/:appKey` | Semua IP untuk satu app | ✓ |
+| `GET` | `/api/v1/apps/:appKey/:site` | IP app di site tertentu | ✓ |
+| `GET` | `/api/v1/lookup?app=...&site=...` | Quick lookup (minimal) | ✓ |
+| `GET` | `/api/v1/summary` | Dashboard statistics | ✓ |
+| `GET` | `/api/v1/regions` | List semua regions | ✓ |
+| `GET` | `/api/v1/regions/:code` | Region detail + sites | ✓ |
+| `GET` | `/api/v1/regions/:code/sites` | Sites with IPs in region | ✓ |
+| `POST` | `/api/v1/regions` | Create region (auth) | — |
+| `PUT` | `/api/v1/regions/:code` | Update region (auth) | — |
+| `DELETE` | `/api/v1/regions/:code` | Delete region (auth) | — |
+| `POST` | `/api/v1/auth/login` | Login (session) | — |
+| `POST` | `/api/v1/auth/logout` | Logout | — |
+| `GET` | `/api/v1/auth/me` | Current session info | — |
 
 **Contoh response `GET /api/v1/sites/SITE-01`:**
 ```json
@@ -125,6 +146,11 @@ Perubahan dari versi sebelumnya:
 - **Fix search bug** — search di-handle dengan filter pada array hasil fetch, bukan DOM manipulation
 - **Loading state** — tambah skeleton loader saat fetch API
 - **Auto-select site pertama** — UX lebih langsung to the point
+- **Region filter** — dropdown di sidebar untuk filter site by region
+- **Region badge** — tampilkan region code di site cards dan sidebar items
+- **Region info card** — tampilkan region di detail view
+- **Region CRUD modal** — modal untuk manage regions (create, edit, delete)
+- **Assign region** — assign/unassign site ke region dari detail view
 
 ---
 
@@ -151,11 +177,20 @@ Perubahan dari versi sebelumnya:
 - `GET /health` → `{ status: "ok" }`
 - `GET /api/v1/sites` → 22 sites (tanpa API Key → 401)
 - `GET /api/v1/sites` dengan header `X-API-Key` → 22 sites
+- `GET /api/v1/sites?includeRegion=true` → 22 sites with regionCode/regionName
 - `GET /api/v1/sites/SITE-01` → data lengkap 8 IPs
+- `GET /api/v1/regions` → list regions
+- `GET /api/v1/regions/PAPUA` → region detail with sites
+- `GET /api/v1/regions/PAPUA/sites` → sites with IPs in Papua region
 - Frontend tampil dan auto-load Site 1
+- Region filter dropdown berfungsi
+- Region badge muncul di site cards
 
 ### Manual
 - Test di browser: pilih berbagai site, search berfungsi
+- Test region filter di sidebar
+- Test region CRUD modal (create, edit, delete)
+- Test assign/unassign site ke region
 - Test dengan Postman/curl untuk semua endpoints
 - Pastikan CORS header muncul untuk simulasi mobile request
 

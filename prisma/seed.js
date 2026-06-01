@@ -97,6 +97,15 @@ const DEFAULT_USERS = [
 	},
 ];
 
+// ── Default regions ──────────────────────────────────────────────────────────
+const DEFAULT_REGIONS = [
+	{
+		regionCode: 'PAPUA',
+		regionName: 'Papua',
+		description: 'Wilayah Papua — 22 site',
+	},
+];
+
 const TOTAL_SITES = 22;
 
 /**
@@ -157,7 +166,25 @@ async function main() {
 	// Build lookup: key → appType row
 	const appTypeMap = Object.fromEntries(appTypes.map(at => [at.key, at]));
 
-	// ── Step 3: Upsert Sites + SiteIps ──────────────────────────────────────
+	// ── Step 3: Upsert Regions ──────────────────────────────────────────────
+	console.log('🗺️  Seeding regions...');
+	const regionMap = {};
+	for (const r of DEFAULT_REGIONS) {
+		const region = await prisma.region.upsert({
+			where: { regionCode: r.regionCode },
+			update: { regionName: r.regionName, description: r.description },
+			create: {
+				regionCode: r.regionCode,
+				regionName: r.regionName,
+				description: r.description,
+			},
+		});
+		regionMap[r.regionCode] = region;
+		console.log(`   ✓  ${r.regionCode} — ${r.regionName}`);
+	}
+	console.log(`   ✅  ${DEFAULT_REGIONS.length} regions ready\n`);
+
+	// ── Step 4: Upsert Sites + SiteIps ──────────────────────────────────────
 	console.log(`🏢  Seeding ${TOTAL_SITES} sites...\n`);
 	let totalIPs = 0;
 
@@ -165,11 +192,18 @@ async function main() {
 		const siteCode = `SITE-${String(i + 1).padStart(2, '0')}`;
 		const siteName = `Site ${i + 1}`;
 		const blockIp = `${generateIP(i)}/27`;
+		// Assign all 22 sites to PAPUA region
+		const papuaRegion = regionMap['PAPUA'];
 
 		const site = await prisma.site.upsert({
 			where: { siteCode },
-			update: { siteName, blockIp },
-			create: { siteCode, siteName, blockIp },
+			update: { siteName, blockIp, regionId: papuaRegion?.id ?? null },
+			create: {
+				siteCode,
+				siteName,
+				blockIp,
+				regionId: papuaRegion?.id ?? null,
+			},
 		});
 
 		for (const appDef of APP_TYPES) {

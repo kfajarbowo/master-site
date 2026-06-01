@@ -78,6 +78,11 @@
 			<div class="body">
 				<aside class="sidebar">
 					<div class="sidebar-top">
+						<div class="region-filter-wrap">
+							<select id="region-filter" class="region-select">
+								<option value="">Semua Region</option>
+							</select>
+						</div>
 						<div class="search-wrap">
 							<svg
 								viewBox="0 0 24 24"
@@ -187,6 +192,15 @@
 								placeholder="Opsional"
 								autocomplete="off"
 							/>
+						</div>
+					</div>
+					<div class="form-row">
+						<div class="form-group">
+							<label class="form-label" for="create-region">Region</label>
+							<select class="form-input region-select-modal" id="create-region">
+								<option value="">— Tanpa Region —</option>
+							</select>
+							<div class="form-hint">Assign site ke region (opsional)</div>
 						</div>
 					</div>
 
@@ -310,6 +324,131 @@
 						</button>
 					</div>
 				</form>
+			</div>
+		</div>
+
+		<!-- REGION MANAGEMENT MODAL -->
+		<div
+			class="modal-backdrop"
+			id="region-modal"
+			role="dialog"
+			aria-modal="true"
+		>
+			<div class="modal modal-lg">
+				<div class="modal-header">
+					<div class="modal-title">Manajemen Region</div>
+					<button
+						class="modal-close"
+						onclick="closeRegionModal()"
+						title="Tutup"
+					>
+						&times;
+					</button>
+				</div>
+				<div id="region-list-container">
+					<div class="region-list-header">
+						<span class="rl-title">Daftar Region</span>
+						<button
+							class="btn btn-primary btn-sm"
+							onclick="openAddRegionForm()"
+						>
+							<svg
+								viewBox="0 0 24 24"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="2"
+							>
+								<line x1="12" y1="5" x2="12" y2="19" />
+								<line x1="5" y1="12" x2="19" y2="12" />
+							</svg>
+							Tambah Region
+						</button>
+					</div>
+					<div id="region-list" class="region-list"></div>
+				</div>
+
+				<!-- Add/Edit Region Form (hidden by default) -->
+				<div id="region-form-container" style="display: none">
+					<div class="region-list-header">
+						<span class="rl-title" id="region-form-title"
+							>Tambah Region Baru</span
+						>
+					</div>
+					<form id="region-form" onsubmit="submitRegionForm(event)">
+						<input type="hidden" id="region-edit-code" />
+						<div class="form-row">
+							<div class="form-group">
+								<label class="form-label" for="region-code"
+									>Region Code <span style="color: var(--red)">*</span></label
+								>
+								<input
+									class="form-input"
+									id="region-code"
+									type="text"
+									placeholder="PAPUA"
+									required
+									autocomplete="off"
+									style="text-transform: uppercase"
+								/>
+								<div class="form-hint">
+									Format: huruf kapital (contoh: PAPUA, JAKARTA)
+								</div>
+							</div>
+							<div class="form-group">
+								<label class="form-label" for="region-name"
+									>Nama Region <span style="color: var(--red)">*</span></label
+								>
+								<input
+									class="form-input"
+									id="region-name"
+									type="text"
+									placeholder="Papua"
+									required
+									autocomplete="off"
+								/>
+							</div>
+						</div>
+						<div class="form-group">
+							<label class="form-label" for="region-description"
+								>Deskripsi</label
+							>
+							<input
+								class="form-input"
+								id="region-description"
+								type="text"
+								placeholder="Opsional"
+								autocomplete="off"
+							/>
+						</div>
+						<div class="modal-footer">
+							<button
+								type="button"
+								class="btn btn-ghost"
+								onclick="cancelRegionForm()"
+							>
+								Batal
+							</button>
+							<button
+								type="submit"
+								class="btn btn-primary"
+								id="btn-region-save"
+							>
+								<svg
+									viewBox="0 0 24 24"
+									fill="none"
+									stroke="currentColor"
+									stroke-width="2"
+								>
+									<path
+										d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"
+									/>
+									<polyline points="17 21 17 13 7 13 7 21" />
+								</svg>
+								Simpan
+							</button>
+						</div>
+					</form>
+				</div>
 			</div>
 		</div>
 

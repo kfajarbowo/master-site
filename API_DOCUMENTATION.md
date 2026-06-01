@@ -237,6 +237,7 @@ curl http://localhost:3003/api/v1/summary
 ### 6.1 Create New Site
 - **Endpoint:** `POST /api/v1/sites`
 - **Required Fields:** `siteCode`, `siteName`, `blockIp`
+- **Optional Fields:** `description`, `regionId`, `ips` (array of IP entries)
 ```bash
 curl -X POST http://localhost:3003/api/v1/sites \
      -H "Content-Type: application/json" \
@@ -246,11 +247,12 @@ curl -X POST http://localhost:3003/api/v1/sites \
 
 ### 6.2 Update Site Metadata
 - **Endpoint:** `PUT /api/v1/sites/{siteCode}`
+- **Optional Fields:** `siteName`, `blockIp`, `description`, `regionId` (set to `null` to remove region)
 ```bash
 curl -X PUT http://localhost:3003/api/v1/sites/SITE-23 \
      -H "Content-Type: application/json" \
      -H "X-API-Key: mysecretkey" \
-     -d '{ "siteName": "Site 23 (Updated)", "description": "New description" }'
+     -d '{ "siteName": "Site 23 (Updated)", "description": "New description", "regionId": 1 }'
 ```
 
 ### 6.3 Update Specific Site IP
@@ -270,7 +272,97 @@ curl -X DELETE http://localhost:3003/api/v1/sites/SITE-23 -H "X-API-Key: mysecre
 
 ---
 
-## ⚙️ 7. System / Utility
+## 🗺️ 7. Regions (`/api/v1/regions`) — **NEW**
+
+> Endpoint untuk mengelola region/wilayah. GET = public, Mutation = session atau API key.
+
+### 7.1 List All Regions
+- **Endpoint:** `GET /api/v1/regions`
+```bash
+curl http://localhost:3003/api/v1/regions
+```
+- **Response:**
+```json
+{
+  "status": "success",
+  "data": [
+    {
+      "regionCode": "PAPUA",
+      "regionName": "Papua",
+      "description": "Wilayah Papua — 22 site",
+      "sites": [
+        { "siteCode": "SITE-01", "siteName": "Site 1", "blockIp": "172.27.0.0/27", "description": null }
+      ]
+    }
+  ],
+  "meta": { "total": 1 }
+}
+```
+
+### 7.2 Get Region Detail
+- **Endpoint:** `GET /api/v1/regions/{regionCode}`
+```bash
+curl http://localhost:3003/api/v1/regions/PAPUA
+```
+
+### 7.3 Get Region Sites (with IPs)
+- **Endpoint:** `GET /api/v1/regions/{regionCode}/sites`
+```bash
+curl http://localhost:3003/api/v1/regions/PAPUA/sites
+```
+- **Response:**
+```json
+{
+  "status": "success",
+  "data": {
+    "regionCode": "PAPUA",
+    "regionName": "Papua",
+    "totalSites": 22,
+    "sites": [
+      {
+        "siteCode": "SITE-01",
+        "siteName": "Site 1",
+        "blockIp": "172.27.0.0/27",
+        "ips": [
+          { "appKey": "router", "appName": "Gateway", "type": "SERVER", "highlighted": false, "ip": "172.27.0.1", "subnet": "/27", "fullIp": "172.27.0.1/27", "port": null, "note": null }
+        ]
+      }
+    ]
+  }
+}
+```
+
+### 7.4 Create Region
+- **Endpoint:** `POST /api/v1/regions`
+- **Required Fields:** `regionCode`, `regionName`
+- **Optional Fields:** `description`
+```bash
+curl -X POST http://localhost:3003/api/v1/regions \
+     -H "Content-Type: application/json" \
+     -H "X-API-Key: mysecretkey" \
+     -d '{ "regionCode": "JAKARTA", "regionName": "Jakarta", "description": "Wilayah Jakarta" }'
+```
+
+### 7.5 Update Region
+- **Endpoint:** `PUT /api/v1/regions/{regionCode}`
+- **Optional Fields:** `regionName`, `description`
+```bash
+curl -X PUT http://localhost:3003/api/v1/regions/JAKARTA \
+     -H "Content-Type: application/json" \
+     -H "X-API-Key: mysecretkey" \
+     -d '{ "regionName": "Jakarta (Updated)", "description": "Updated description" }'
+```
+
+### 7.6 Delete Region
+- **Endpoint:** `DELETE /api/v1/regions/{regionCode}`
+- **Note:** Sites linked to this region will have their `regionId` set to `null` (ON DELETE SET NULL).
+```bash
+curl -X DELETE http://localhost:3003/api/v1/regions/JAKARTA -H "X-API-Key: mysecretkey"
+```
+
+---
+
+## ⚙️ 8. System / Utility
 
 ### 7.1 Health Check
 - **Endpoint:** `GET /health`
@@ -295,13 +387,22 @@ curl http://localhost:3003/api/v1/
 | `/api/v1/apps/:appKey/:siteCode` | GET | ❌ | IP app di site tertentu |
 | `/api/v1/lookup?app=...&site=...` | GET | ❌ | Quick lookup (minimal) |
 | `/api/v1/summary` | GET | ❌ | Statistik dashboard |
+| `/api/v1/regions` | GET | ❌ | List semua regions |
+| `/api/v1/regions/:code` | GET | ❌ | Detail region + sites |
+| `/api/v1/regions/:code/sites` | GET | ❌ | Sites with IPs in region |
+| `/api/v1/regions` | POST | ✅ | Buat region baru |
+| `/api/v1/regions/:code` | PUT | ✅ | Update region |
+| `/api/v1/regions/:code` | DELETE | ✅ | Hapus region |
 | `/api/v1/sites` | GET | ❌ | List semua sites |
+| `/api/v1/sites?includeRegion=true` | GET | ❌ | Sites with region info |
+| `/api/v1/sites?region=PAPUA` | GET | ❌ | Sites filtered by region |
 | `/api/v1/sites?type=APP` | GET | ❌ | Sites filtered by IP type |
 | `/api/v1/sites?app=bms` | GET | ❌ | Sites filtered by app |
 | `/api/v1/sites/:code` | GET | ❌ | Detail satu site |
+| `/api/v1/sites/:code?includeRegion=true` | GET | ❌ | Detail site with region |
 | `/api/v1/sites/:code/ips` | GET | ❌ | IP list per site |
 | `/api/v1/sites/:code/ips/:appKey` | GET | ❌ | IP spesifik per app per site |
 | `/api/v1/sites` | POST | ✅ | Buat site baru |
-| `/api/v1/sites/:code` | PUT | ✅ | Update metadata site |
+| `/api/v1/sites/:code` | PUT | ✅ | Update metadata site (incl. regionId) |
 | `/api/v1/sites/:code/ips/:appKey` | PATCH | ✅ | Update IP spesifik |
 | `/api/v1/sites/:code` | DELETE | ✅ | Hapus site |

@@ -1223,6 +1223,172 @@ body::before {
   text-align: center;
 }
 
+/* ── Region filter ─────────────────────────────────── */
+.region-filter-wrap {
+	margin-bottom: 8px;
+}
+
+.region-select {
+	width: 100%;
+	padding: 7px 10px;
+	background: var(--bg-primary);
+	border: 1px solid var(--border);
+	border-radius: var(--radius-sm);
+	color: var(--text-1);
+	font-size: 0.78rem;
+	font-family: 'Inter', sans-serif;
+	outline: none;
+	transition: border-color .2s, box-shadow .2s;
+	cursor: pointer;
+	appearance: none;
+	-webkit-appearance: none;
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+	background-repeat: no-repeat;
+	background-position: right 10px center;
+	padding-right: 28px;
+}
+
+.region-select:focus {
+	border-color: var(--cyan);
+	box-shadow: 0 0 0 3px rgba(14, 165, 233, .1);
+}
+
+.region-select-modal {
+	appearance: none;
+	-webkit-appearance: none;
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+	background-repeat: no-repeat;
+	background-position: right 10px center;
+	padding-right: 28px;
+	cursor: pointer;
+}
+
+/* ── Region badge on sidebar ──────────────────────── */
+.si-region {
+	display: inline-block;
+	font-size: .55rem;
+	font-weight: 600;
+	color: var(--green);
+	background: #f0fdf4;
+	border: 1px solid #bbf7d0;
+	border-radius: 3px;
+	padding: 1px 4px;
+	letter-spacing: .03em;
+	vertical-align: middle;
+	margin-left: 4px;
+}
+
+/* ── Region badge on grid card ────────────────────── */
+.gc-top-row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 6px;
+	margin-bottom: 3px;
+}
+
+.gc-region-badge {
+	display: inline-block;
+	font-size: .55rem;
+	font-weight: 600;
+	color: var(--green);
+	background: #f0fdf4;
+	border: 1px solid #bbf7d0;
+	border-radius: 3px;
+	padding: 1px 5px;
+	letter-spacing: .03em;
+	white-space: nowrap;
+}
+
+/* ── Region list in modal ─────────────────────────── */
+.region-list-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+	margin-bottom: 12px;
+}
+
+.rl-title {
+	font-size: .78rem;
+	font-weight: 600;
+	color: var(--text-2);
+	text-transform: uppercase;
+	letter-spacing: .06em;
+}
+
+.region-list {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	max-height: 400px;
+	overflow-y: auto;
+	padding-right: 4px;
+}
+
+.region-list::-webkit-scrollbar {
+	width: 3px;
+}
+
+.region-list::-webkit-scrollbar-thumb {
+	background: var(--border);
+	border-radius: 3px;
+}
+
+.region-item {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 10px;
+	padding: 10px 12px;
+	background: var(--bg-primary);
+	border: 1px solid var(--border);
+	border-radius: var(--radius-sm);
+	transition: border-color .15s;
+}
+
+.region-item:hover {
+	border-color: var(--cyan);
+}
+
+.ri-info {
+	flex: 1;
+	min-width: 0;
+}
+
+.ri-code {
+	font-family: 'JetBrains Mono', monospace;
+	font-size: .72rem;
+	font-weight: 600;
+	color: var(--green);
+	letter-spacing: .04em;
+}
+
+.ri-name {
+	font-size: .85rem;
+	font-weight: 500;
+	color: var(--text-1);
+}
+
+.ri-desc {
+	font-size: .68rem;
+	color: var(--text-3);
+	margin-top: 2px;
+}
+
+.ri-actions {
+	display: flex;
+	gap: 4px;
+	flex-shrink: 0;
+}
+
+.region-empty {
+	padding: 24px;
+	text-align: center;
+	font-size: .78rem;
+	color: var(--text-3);
+}
+
 /* ── Responsive ────────────────────────────────────── */
 @media (max-width: 768px) {
   body {

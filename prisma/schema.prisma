@@ -15,6 +15,20 @@ enum AppCategory {
   APP
 }
 
+// ── Region: Wilayah administratif (overlay, tidak mengubah API mobile) ──
+model Region {
+  id          Int      @id @default(autoincrement())
+  regionCode  String   @unique @map("region_code") @db.VarChar(10)
+  regionName  String   @map("region_name") @db.VarChar(100)
+  description String?  @db.Text
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  sites Site[]
+
+  @@map("regions")
+}
+
 // ── Site: 22 titik lokasi ─────────────────────────────
 model Site {
   id          Int      @id @default(autoincrement())
@@ -22,10 +36,12 @@ model Site {
   siteName    String   @map("site_name") @db.VarChar(100)
   blockIp     String   @map("block_ip") @db.VarChar(20)
   description String?  @db.Text
+  regionId    Int?     @map("region_id")
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
-  ips SiteIp[]
+  ips     SiteIp[]
+  region  Region?  @relation(fields: [regionId], references: [id], onDelete: SetNull)
 
   @@map("sites")
 }
