@@ -19,8 +19,8 @@ docker pull postgres:15-alpine
 
 # 2. Build the app image
 echo ""
-echo "🔨  Building master-ip:latest..."
-docker build -t master-ip:latest .
+echo "🔨  Building master-ip:latest (no-cache to ensure latest code)..."
+docker build --no-cache -t master-ip:latest .
 
 # 3. Save both images into a single tar
 echo ""
@@ -35,5 +35,5 @@ echo "  scp master-ip-images.tar nexxuz@192.168.204.107:~/"
 echo ""
 echo "  Then on the server:"
 echo "  sudo docker load -i ~/master-ip-images.tar"
-echo "  cd ~/master-ip && docker compose up -d"
+echo "  cd ~/master-ip && docker compose down && docker compose up -d"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
