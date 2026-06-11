@@ -54,8 +54,8 @@ async function api(path, options = {}) {
 			...(options.headers || {}),
 		},
 	});
-	// Session expired?
-	if (res.status === 401) {
+	// Only redirect to login for auth-related 401s (session expired)
+	if (res.status === 401 && path.startsWith('/auth')) {
 		window.location.replace('/login');
 		return;
 	}

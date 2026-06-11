@@ -37,7 +37,7 @@ curl -X POST http://localhost:3003/api/v1/auth/logout -b "connect.sid=..."
 
 ## 🌐 2. Sites & IP Data — Site-Centric (`/api/v1/sites`)
 
-> **Auth:** GET = public | POST/PUT/PATCH/DELETE = session or API key
+> **Auth:** Semua endpoint public (tanpa auth) — digunakan oleh desktop app.
 
 ### 2.1 Get All Sites
 - **Endpoint:** `GET /api/v1/sites`
@@ -232,7 +232,7 @@ curl http://localhost:3003/api/v1/summary
 
 ## ✏️ 6. Sites & IP Data — MODIFY (CRUD)
 
-> **Auth required:** Session cookie atau `X-API-Key` header.
+> **Semua endpoint public** (tanpa auth) — digunakan oleh desktop app.
 
 ### 6.1 Create New Site
 - **Endpoint:** `POST /api/v1/sites`
@@ -241,7 +241,6 @@ curl http://localhost:3003/api/v1/summary
 ```bash
 curl -X POST http://localhost:3003/api/v1/sites \
      -H "Content-Type: application/json" \
-     -H "X-API-Key: mysecretkey" \
      -d '{ "siteCode": "SITE-23", "siteName": "Site 23", "blockIp": "172.27.2.192/27" }'
 ```
 
@@ -251,7 +250,6 @@ curl -X POST http://localhost:3003/api/v1/sites \
 ```bash
 curl -X PUT http://localhost:3003/api/v1/sites/SITE-23 \
      -H "Content-Type: application/json" \
-     -H "X-API-Key: mysecretkey" \
      -d '{ "siteName": "Site 23 (Updated)", "description": "New description", "regionId": 1 }'
 ```
 
@@ -260,21 +258,20 @@ curl -X PUT http://localhost:3003/api/v1/sites/SITE-23 \
 ```bash
 curl -X PATCH http://localhost:3003/api/v1/sites/SITE-01/ips/eyesee \
      -H "Content-Type: application/json" \
-     -H "X-API-Key: mysecretkey" \
      -d '{ "ipAddress": "192.168.1.15", "port": 3001 }'
 ```
 
 ### 6.4 Delete Site
 - **Endpoint:** `DELETE /api/v1/sites/{siteCode}`
 ```bash
-curl -X DELETE http://localhost:3003/api/v1/sites/SITE-23 -H "X-API-Key: mysecretkey"
+curl -X DELETE http://localhost:3003/api/v1/sites/SITE-23
 ```
 
 ---
 
 ## 🗺️ 7. Regions (`/api/v1/regions`) — **NEW**
 
-> Endpoint untuk mengelola region/wilayah. GET = public, Mutation = session atau API key.
+> Endpoint untuk mengelola region/wilayah. **Semua endpoint public** (tanpa auth) — digunakan oleh desktop app.
 
 ### 7.1 List All Regions
 - **Endpoint:** `GET /api/v1/regions`
@@ -339,7 +336,6 @@ curl http://localhost:3003/api/v1/regions/PAPUA/sites
 ```bash
 curl -X POST http://localhost:3003/api/v1/regions \
      -H "Content-Type: application/json" \
-     -H "X-API-Key: mysecretkey" \
      -d '{ "regionCode": "JAKARTA", "regionName": "Jakarta", "description": "Wilayah Jakarta" }'
 ```
 
@@ -349,7 +345,6 @@ curl -X POST http://localhost:3003/api/v1/regions \
 ```bash
 curl -X PUT http://localhost:3003/api/v1/regions/JAKARTA \
      -H "Content-Type: application/json" \
-     -H "X-API-Key: mysecretkey" \
      -d '{ "regionName": "Jakarta (Updated)", "description": "Updated description" }'
 ```
 
@@ -357,7 +352,7 @@ curl -X PUT http://localhost:3003/api/v1/regions/JAKARTA \
 - **Endpoint:** `DELETE /api/v1/regions/{regionCode}`
 - **Note:** Sites linked to this region will have their `regionId` set to `null` (ON DELETE SET NULL).
 ```bash
-curl -X DELETE http://localhost:3003/api/v1/regions/JAKARTA -H "X-API-Key: mysecretkey"
+curl -X DELETE http://localhost:3003/api/v1/regions/JAKARTA
 ```
 
 ---
@@ -390,9 +385,9 @@ curl http://localhost:3003/api/v1/
 | `/api/v1/regions` | GET | ❌ | List semua regions |
 | `/api/v1/regions/:code` | GET | ❌ | Detail region + sites |
 | `/api/v1/regions/:code/sites` | GET | ❌ | Sites with IPs in region |
-| `/api/v1/regions` | POST | ✅ | Buat region baru |
-| `/api/v1/regions/:code` | PUT | ✅ | Update region |
-| `/api/v1/regions/:code` | DELETE | ✅ | Hapus region |
+| `/api/v1/regions` | POST | ❌ | Buat region baru (public for desktop app) |
+| `/api/v1/regions/:code` | PUT | ❌ | Update region (public for desktop app) |
+| `/api/v1/regions/:code` | DELETE | ❌ | Hapus region (public for desktop app) |
 | `/api/v1/sites` | GET | ❌ | List semua sites |
 | `/api/v1/sites?includeRegion=true` | GET | ❌ | Sites with region info |
 | `/api/v1/sites?region=PAPUA` | GET | ❌ | Sites filtered by region |
@@ -402,7 +397,7 @@ curl http://localhost:3003/api/v1/
 | `/api/v1/sites/:code?includeRegion=true` | GET | ❌ | Detail site with region |
 | `/api/v1/sites/:code/ips` | GET | ❌ | IP list per site |
 | `/api/v1/sites/:code/ips/:appKey` | GET | ❌ | IP spesifik per app per site |
-| `/api/v1/sites` | POST | ✅ | Buat site baru |
-| `/api/v1/sites/:code` | PUT | ✅ | Update metadata site (incl. regionId) |
-| `/api/v1/sites/:code/ips/:appKey` | PATCH | ✅ | Update IP spesifik |
-| `/api/v1/sites/:code` | DELETE | ✅ | Hapus site |
+| `/api/v1/sites` | POST | ❌ | Buat site baru (public) |
+| `/api/v1/sites/:code` | PUT | ❌ | Update metadata site (incl. regionId) (public) |
+| `/api/v1/sites/:code/ips/:appKey` | PATCH | ❌ | Update IP spesifik (public) |
+| `/api/v1/sites/:code` | DELETE | ❌ | Hapus site (public) |

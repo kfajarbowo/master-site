@@ -37,7 +37,8 @@ async function createRegion(req, res, next) {
 			const { createError } = require('../utils/response');
 			return next(createError(400, 'regionCode dan regionName wajib diisi.'));
 		}
-		return success(res, await svc.createRegion(req.body), 201);
+		const result = await svc.createRegion(req.body);
+		return success(res, result, 201);
 	} catch (err) {
 		next(err);
 	}
@@ -46,7 +47,8 @@ async function createRegion(req, res, next) {
 // ── UPDATE ────────────────────────────────────────────────────
 async function updateRegion(req, res, next) {
 	try {
-		return success(res, await svc.updateRegion(req.params.code, req.body));
+		const result = await svc.updateRegion(req.params.code, req.body);
+		return success(res, result);
 	} catch (err) {
 		next(err);
 	}
@@ -55,7 +57,8 @@ async function updateRegion(req, res, next) {
 // ── DELETE ────────────────────────────────────────────────────
 async function deleteRegion(req, res, next) {
 	try {
-		return success(res, await svc.deleteRegion(req.params.code));
+		const result = await svc.deleteRegion(req.params.code);
+		return success(res, result);
 	} catch (err) {
 		next(err);
 	}
