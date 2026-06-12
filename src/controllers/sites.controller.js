@@ -2,6 +2,7 @@
 
 const svc = require('../services/sites.service');
 const { success } = require('../utils/response');
+const { finalizeFilename } = require('../middlewares/upload');
 
 // ── READ ──────────────────────────────────────────────────────
 async function listSites(req, res, next) {
@@ -75,7 +76,11 @@ async function createSite(req, res, next) {
 		}
 
 		// Build imageUrl from uploaded file (if any)
-		const imageUrl = req.file ? `/uploads/sites/${req.file.filename}` : null;
+		// Use finalizeFilename to rename temp file to site-based name
+		const finalFilename = req.file
+			? finalizeFilename(req.file, body.siteCode)
+			: null;
+		const imageUrl = finalFilename ? `/uploads/sites/${finalFilename}` : null;
 
 		return success(res, await svc.createSite(body, imageUrl), 201);
 	} catch (err) {
@@ -93,9 +98,11 @@ async function updateSite(req, res, next) {
 		}
 
 		// Build imageUrl from uploaded file (if any)
-		const imageUrl = req.file
-			? `/uploads/sites/${req.file.filename}`
-			: undefined;
+		// Use finalizeFilename to rename temp file to site-based name
+		const finalFilename = req.file
+			? finalizeFilename(req.file, req.params.code)
+			: null;
+		const imageUrl = req.file ? `/uploads/sites/${finalFilename}` : undefined;
 
 		return success(res, await svc.updateSite(req.params.code, body, imageUrl));
 	} catch (err) {
