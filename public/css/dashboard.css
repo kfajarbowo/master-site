@@ -1057,6 +1057,31 @@ body::before {
   border-color: var(--red);
 }
 
+.form-input[type="file"] {
+  font-family: 'Inter', sans-serif;
+  font-size: .82rem;
+  padding: 7px 12px;
+  cursor: pointer;
+}
+
+.form-input[type="file"]::file-selector-button {
+  padding: 5px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--cyan);
+  color: #fff;
+  border: none;
+  font-family: 'Inter', sans-serif;
+  font-size: .72rem;
+  font-weight: 600;
+  cursor: pointer;
+  margin-right: 10px;
+  transition: background .15s;
+}
+
+.form-input[type="file"]::file-selector-button:hover {
+  background: #0284c7;
+}
+
 .form-hint {
   font-size: .67rem;
   color: var(--text-3);

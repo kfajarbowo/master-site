@@ -132,8 +132,8 @@ curl http://localhost:3003/api/v1/apps/eyesee?site=SITE-05
     "type": "APP",
     "total": 22,
     "sites": [
-      { "siteCode": "SITE-01", "siteName": "Site 1", "blockIp": "172.27.0.0/27", "ip": "172.27.0.4", "subnet": "/27", "fullIp": "172.27.0.4/27", "port": 8502, "note": null },
-      { "siteCode": "SITE-02", "siteName": "Site 2", "blockIp": "172.27.0.32/27", "ip": "172.27.0.36", "subnet": "/27", "fullIp": "172.27.0.36/27", "port": 8502, "note": null },
+      { "siteCode": "SITE-01", "siteName": "Site 1", "blockIp": "172.27.0.0/27", "imageUrl": "/uploads/sites/SITE-01.png", "ip": "172.27.0.4", "subnet": "/27", "fullIp": "172.27.0.4/27", "port": 8502, "note": null },
+      { "siteCode": "SITE-02", "siteName": "Site 2", "blockIp": "172.27.0.32/27", "imageUrl": null, "ip": "172.27.0.36", "subnet": "/27", "fullIp": "172.27.0.36/27", "port": 8502, "note": null },
       ...
     ]
   }
@@ -155,6 +155,7 @@ curl http://localhost:3003/api/v1/apps/bms/SITE-03
     "siteCode": "SITE-03",
     "siteName": "Site 3",
     "blockIp": "172.27.0.64/27",
+    "imageUrl": "/uploads/sites/SITE-03.png",
     "appKey": "bms",
     "appName": "Battle Management System",
     "type": "APP",
@@ -236,21 +237,40 @@ curl http://localhost:3003/api/v1/summary
 
 ### 6.1 Create New Site
 - **Endpoint:** `POST /api/v1/sites`
+- **Content-Type:** `multipart/form-data` (if uploading image) or `application/json` (without image)
 - **Required Fields:** `siteCode`, `siteName`, `blockIp`
-- **Optional Fields:** `description`, `regionId`, `ips` (array of IP entries)
+- **Optional Fields:** `description`, `regionId`, `ips` (array of IP entries, sent as JSON string in multipart), `image` (file upload — JPEG, PNG, GIF, WebP, SVG, max 5MB)
+- **Note:** When using `multipart/form-data`, the `ips` field must be sent as a JSON string (e.g. `ips='[{"appKey":"bms","ipAddress":"172.27.2.196"}]'`)
 ```bash
+# Create site without image (JSON body)
 curl -X POST http://localhost:3003/api/v1/sites \
      -H "Content-Type: application/json" \
      -d '{ "siteCode": "SITE-23", "siteName": "Site 23", "blockIp": "172.27.2.192/27" }'
+
+# Create site with image (multipart/form-data)
+curl -X POST http://localhost:3003/api/v1/sites \
+     -H "X-API-Key: mysecretkey" \
+     -F "siteCode=SITE-23" \
+     -F "siteName=Site 23" \
+     -F "blockIp=172.27.2.192/27" \
+     -F "image=@/path/to/site-photo.png"
 ```
 
 ### 6.2 Update Site Metadata
 - **Endpoint:** `PUT /api/v1/sites/{siteCode}`
-- **Optional Fields:** `siteName`, `blockIp`, `description`, `regionId` (set to `null` to remove region)
+- **Content-Type:** `multipart/form-data` (if uploading image) or `application/json` (without image)
+- **Optional Fields:** `siteName`, `blockIp`, `description`, `regionId` (set to `null` to remove region), `image` (file upload — replaces existing image)
 ```bash
+# Update site without image (JSON body)
 curl -X PUT http://localhost:3003/api/v1/sites/SITE-23 \
      -H "Content-Type: application/json" \
      -d '{ "siteName": "Site 23 (Updated)", "description": "New description", "regionId": 1 }'
+
+# Update site with new image (multipart/form-data)
+curl -X PUT http://localhost:3003/api/v1/sites/SITE-23 \
+     -H "X-API-Key: mysecretkey" \
+     -F "siteName=Site 23 (Updated)" \
+     -F "image=@/path/to/new-photo.png"
 ```
 
 ### 6.3 Update Specific Site IP
@@ -288,7 +308,7 @@ curl http://localhost:3003/api/v1/regions
       "regionName": "Papua",
       "description": "Wilayah Papua — 22 site",
       "sites": [
-        { "siteCode": "SITE-01", "siteName": "Site 1", "blockIp": "172.27.0.0/27", "description": null }
+        { "siteCode": "SITE-01", "siteName": "Site 1", "blockIp": "172.27.0.0/27", "description": null, "imageUrl": "/uploads/sites/SITE-01.png" }
       ]
     }
   ],
@@ -320,6 +340,7 @@ curl http://localhost:3003/api/v1/regions/PAPUA/sites
         "siteCode": "SITE-01",
         "siteName": "Site 1",
         "blockIp": "172.27.0.0/27",
+        "imageUrl": "/uploads/sites/SITE-01.png",
         "ips": [
           { "appKey": "router", "appName": "Gateway", "type": "SERVER", "highlighted": false, "ip": "172.27.0.1", "subnet": "/27", "fullIp": "172.27.0.1/27", "port": null, "note": null }
         ]
@@ -397,7 +418,14 @@ curl http://localhost:3003/api/v1/
 | `/api/v1/sites/:code?includeRegion=true` | GET | ❌ | Detail site with region |
 | `/api/v1/sites/:code/ips` | GET | ❌ | IP list per site |
 | `/api/v1/sites/:code/ips/:appKey` | GET | ❌ | IP spesifik per app per site |
+<<<<<<< HEAD
 | `/api/v1/sites` | POST | ❌ | Buat site baru (public) |
 | `/api/v1/sites/:code` | PUT | ❌ | Update metadata site (incl. regionId) (public) |
 | `/api/v1/sites/:code/ips/:appKey` | PATCH | ❌ | Update IP spesifik (public) |
 | `/api/v1/sites/:code` | DELETE | ❌ | Hapus site (public) |
+=======
+| `/api/v1/sites` | POST | ✅ | Buat site baru (+ optional image upload) |
+| `/api/v1/sites/:code` | PUT | ✅ | Update metadata site (incl. regionId, image) |
+| `/api/v1/sites/:code/ips/:appKey` | PATCH | ✅ | Update IP spesifik |
+| `/api/v1/sites/:code` | DELETE | ✅ | Hapus site |
+>>>>>>> 1756bd75c10813c04ffcb0ff780ddcf23234aa87

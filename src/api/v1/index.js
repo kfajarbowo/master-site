@@ -21,6 +21,7 @@ router.get('/', (_req, res) => {
 				'GET  /api/v1/auth/me               — current session info',
 			],
 			sites: [
+<<<<<<< HEAD
 				'GET    /api/v1/sites                 — list all sites (public)',
 				'GET    /api/v1/sites/:code           — site detail + all IPs (public)',
 				'GET    /api/v1/sites/:code/ips       — IP list only (public)',
@@ -29,6 +30,15 @@ router.get('/', (_req, res) => {
 				'PUT    /api/v1/sites/:code           — update site (public)',
 				'DELETE /api/v1/sites/:code           — delete site (public)',
 				'PATCH  /api/v1/sites/:code/ips/:key  — update single IP (public)',
+=======
+				'GET  /api/v1/sites                 — list all sites',
+				'GET  /api/v1/sites/:code           — site detail + all IPs',
+				'GET  /api/v1/sites/:code/ips       — IP list only',
+				'GET  /api/v1/sites/:code/ips/:key  — single app IP',
+				'POST /api/v1/sites                 — create site (multipart: +image file)',
+				'PUT  /api/v1/sites/:code           — update site (multipart: +image file)',
+				'DELETE /api/v1/sites/:code         — delete site (auth)',
+>>>>>>> 1756bd75c10813c04ffcb0ff780ddcf23234aa87
 			],
 			apps: [
 				'GET  /api/v1/apps                  — list all app types (?type=SERVER|APP)',

@@ -529,6 +529,7 @@ function openCreateModal() {
 	document.getElementById('create-site-name').value = '';
 	document.getElementById('create-block-ip').value = '';
 	document.getElementById('create-description').value = '';
+	document.getElementById('create-image').value = '';
 	document.getElementById('err-create-block-ip').classList.remove('show');
 	document.getElementById('create-block-ip').classList.remove('err');
 
@@ -623,6 +624,7 @@ async function submitCreate(e) {
 		.value.trim();
 	const regionId = document.getElementById('create-region').value;
 	const regionIdInt = regionId ? parseInt(regionId, 10) : null;
+	const imageFile = document.getElementById('create-image').files[0] || null;
 
 	// Validate block IP (simple CIDR check)
 	const cidrRe = /^(\d{1,3}\.){3}\d{1,3}\/\d{1,2}$/;
@@ -657,17 +659,44 @@ async function submitCreate(e) {
 	btn.textContent = 'Membuat...';
 
 	try {
-		const { data: newSite } = await api('/sites', {
-			method: 'POST',
-			body: JSON.stringify({
-				siteCode,
-				siteName,
-				blockIp,
-				description: description || null,
-				regionId: regionIdInt,
-				ips,
-			}),
-		});
+		// Use FormData if image is provided, otherwise JSON
+		let response;
+		if (imageFile) {
+			const formData = new FormData();
+			formData.append('siteCode', siteCode);
+			formData.append('siteName', siteName);
+			formData.append('blockIp', blockIp);
+			if (description) formData.append('description', description);
+			if (regionIdInt) formData.append('regionId', String(regionIdInt));
+			formData.append('ips', JSON.stringify(ips));
+			formData.append('image', imageFile);
+
+			const res = await fetch(`${API_BASE}/sites`, {
+				method: 'POST',
+				credentials: 'same-origin',
+				body: formData,
+			});
+			if (res.status === 401) {
+				window.location.replace('/login');
+				return;
+			}
+			const body = await res.json().catch(() => ({}));
+			if (!res.ok) throw new Error(body.message || `HTTP ${res.status}`);
+			response = body;
+		} else {
+			response = await api('/sites', {
+				method: 'POST',
+				body: JSON.stringify({
+					siteCode,
+					siteName,
+					blockIp,
+					description: description || null,
+					regionId: regionIdInt,
+					ips,
+				}),
+			});
+		}
+		const { data: newSite } = response;
 		closeCreateModal();
 		toast('Site berhasil dibuat!');
 		// Reload all sites

@@ -12,6 +12,9 @@ services:
       - DIRECT_URL=postgresql://masterip:masterip_secret@db:5432/master_ip_db
       - API_KEY=${API_KEY:-changeme-in-production}
       - SESSION_SECRET=${SESSION_SECRET:-changeme-session-secret-in-production}
+      - UPLOAD_DIR=uploads
+    volumes:
+      - app-uploads:/app/uploads
     depends_on:
       db:
         condition: service_healthy
@@ -38,6 +41,7 @@ services:
 
 volumes:
   pgdata:
+  app-uploads:
 
 networks:
   master-ip-net:

@@ -53,15 +53,36 @@ async function getSiteIpByApp(req, res, next) {
 // ── CREATE ────────────────────────────────────────────────────
 async function createSite(req, res, next) {
 	try {
-		const { siteCode, siteName, blockIp, description } = req.body;
+		// Multer may convert body fields to strings; parse JSON fields if needed
+		const body = req.body;
+		if (typeof body.ips === 'string') {
+			try {
+				body.ips = JSON.parse(body.ips);
+			} catch {
+				body.ips = undefined;
+			}
+		}
+		if (typeof body.regionId === 'string') {
+			body.regionId = parseInt(body.regionId, 10) || undefined;
+		}
+
+		const { siteCode, siteName, blockIp, description } = body;
 		if (!siteCode || !siteName || !blockIp) {
 			const { createError } = require('../utils/response');
 			return next(
 				createError(400, 'siteCode, siteName, dan blockIp wajib diisi.')
 			);
 		}
+<<<<<<< HEAD
 		const result = await svc.createSite(req.body);
 		return success(res, result, 201);
+=======
+
+		// Build imageUrl from uploaded file (if any)
+		const imageUrl = req.file ? `/uploads/sites/${req.file.filename}` : null;
+
+		return success(res, await svc.createSite(body, imageUrl), 201);
+>>>>>>> 1756bd75c10813c04ffcb0ff780ddcf23234aa87
 	} catch (err) {
 		next(err);
 	}
@@ -70,8 +91,23 @@ async function createSite(req, res, next) {
 // ── UPDATE ────────────────────────────────────────────────────
 async function updateSite(req, res, next) {
 	try {
+<<<<<<< HEAD
 		const result = await svc.updateSite(req.params.code, req.body);
 		return success(res, result);
+=======
+		// Multer may convert body fields to strings; parse JSON fields if needed
+		const body = req.body;
+		if (typeof body.regionId === 'string') {
+			body.regionId = parseInt(body.regionId, 10) || undefined;
+		}
+
+		// Build imageUrl from uploaded file (if any)
+		const imageUrl = req.file
+			? `/uploads/sites/${req.file.filename}`
+			: undefined;
+
+		return success(res, await svc.updateSite(req.params.code, body, imageUrl));
+>>>>>>> 1756bd75c10813c04ffcb0ff780ddcf23234aa87
 	} catch (err) {
 		next(err);
 	}
