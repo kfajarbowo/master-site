@@ -1,6 +1,6 @@
 'use strict';
 
-const { logger }        = require('../utils/logger');
+const { logger } = require('../utils/logger');
 const { errorResponse } = require('../utils/response');
 
 /**
@@ -9,17 +9,36 @@ const { errorResponse } = require('../utils/response');
  */
 // eslint-disable-next-line no-unused-vars
 function errorHandler(err, req, res, next) {
-  const statusCode = err.statusCode || 500;
-  const message    = err.message    || 'Internal server error';
+	// ── Handle Multer upload errors ──────────────────────────────────────────
+	if (err.code === 'LIMIT_FILE_SIZE') {
+		return errorResponse(res, 'File terlalu besar. Maksimum 5MB.', 400);
+	}
+	if (err.code === 'LIMIT_UNEXPECTED_FILE') {
+		return errorResponse(
+			res,
+			'Field name tidak sesuai. Gunakan "image" untuk upload.',
+			400
+		);
+	}
+	if (err.message && err.message.includes('not allowed')) {
+		// Multer fileFilter rejection
+		return errorResponse(res, err.message, 400);
+	}
 
-  // Log 5xx errors as errors, 4xx as warnings
-  if (statusCode >= 500) {
-    logger.error({ err, req: { method: req.method, url: req.originalUrl } }, message);
-  } else {
-    logger.warn({ statusCode, url: req.originalUrl }, message);
-  }
+	const statusCode = err.statusCode || 500;
+	const message = err.message || 'Internal server error';
 
-  return errorResponse(res, message, statusCode, err.details || null);
+	// Log 5xx errors as errors, 4xx as warnings
+	if (statusCode >= 500) {
+		logger.error(
+			{ err, req: { method: req.method, url: req.originalUrl } },
+			message
+		);
+	} else {
+		logger.warn({ statusCode, url: req.originalUrl }, message);
+	}
+
+	return errorResponse(res, message, statusCode, err.details || null);
 }
 
 module.exports = { errorHandler };

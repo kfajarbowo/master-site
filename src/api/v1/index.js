@@ -27,6 +27,9 @@ router.get('/', (_req, res) => {
 				'GET  /api/v1/sites/:code           — site detail + all IPs',
 				'GET  /api/v1/sites/:code/ips       — IP list only',
 				'GET  /api/v1/sites/:code/ips/:key  — single app IP',
+				'POST /api/v1/sites                 — create site (multipart: +image file)',
+				'PUT  /api/v1/sites/:code           — update site (multipart: +image file)',
+				'DELETE /api/v1/sites/:code         — delete site (auth)',
 			],
 			apps: [
 				'GET  /api/v1/apps                  — list all app types (?type=SERVER|APP)',

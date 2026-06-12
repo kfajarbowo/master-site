@@ -16,6 +16,7 @@ function formatRegionDetail(region) {
 			siteName: site.siteName,
 			blockIp: site.blockIp,
 			description: site.description || null,
+			imageUrl: site.imageUrl || null,
 		};
 	});
 	return {
@@ -34,6 +35,7 @@ const SITE_INCLUDE = {
 			siteName: true,
 			blockIp: true,
 			description: true,
+			imageUrl: true,
 		},
 		orderBy: { siteCode: 'asc' },
 	},
@@ -107,6 +109,7 @@ async function getRegionSites(rawCode) {
 			siteName: site.siteName,
 			blockIp: site.blockIp,
 			description: site.description || null,
+			imageUrl: site.imageUrl || null,
 			ips: mappedIps,
 		};
 	});

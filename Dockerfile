@@ -40,6 +40,9 @@ COPY server.js ./
 COPY src ./src
 COPY public ./public
 
+# Create uploads directory for site images
+RUN mkdir -p uploads/sites
+
 # Copy entrypoint script and ensure Unix line endings + executable
 COPY docker-entrypoint.sh ./
 RUN sed -i 's/\r$//' docker-entrypoint.sh && chmod +x docker-entrypoint.sh

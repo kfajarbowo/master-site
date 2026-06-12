@@ -31,14 +31,15 @@ model Region {
 
 // ── Site: 22 titik lokasi ─────────────────────────────
 model Site {
-  id          Int      @id @default(autoincrement())
-  siteCode    String   @unique @map("site_code") @db.VarChar(10)
-  siteName    String   @map("site_name") @db.VarChar(100)
-  blockIp     String   @map("block_ip") @db.VarChar(20)
-  description String?  @db.Text
-  regionId    Int?     @map("region_id")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+   id          Int      @id @default(autoincrement())
+   siteCode    String   @unique @map("site_code") @db.VarChar(10)
+   siteName    String   @map("site_name") @db.VarChar(100)
+   blockIp     String   @map("block_ip") @db.VarChar(20)
+   description String?  @db.Text
+   imageUrl    String?  @map("image_url") @db.VarChar(255)
+   regionId    Int?     @map("region_id")
+   createdAt   DateTime @default(now()) @map("created_at")
+   updatedAt   DateTime @updatedAt @map("updated_at")
 
   ips     SiteIp[]
   region  Region?  @relation(fields: [regionId], references: [id], onDelete: SetNull)

@@ -7,3 +7,7 @@ Thumbs.db
 *.tar
 *.tar.gz
 nexxuz@blm.id
+
+# Uploads — keep directory structure but ignore uploaded files
+uploads/sites/*
+!uploads/sites/.gitkeep
