@@ -11,6 +11,7 @@ router.get('/', ctrl.listSites); // GET  /api/v1/sites
 router.get('/:code', ctrl.getSite); // GET  /api/v1/sites/:code
 router.get('/:code/ips', ctrl.getSiteIps); // GET  /api/v1/sites/:code/ips
 router.get('/:code/ips/:appKey', ctrl.getSiteIpByApp); // GET  /api/v1/sites/:code/ips/:appKey
+router.get('/:code/image', ctrl.getSiteImage); // GET  /api/v1/sites/:code/image
 
 // ── POST (Create) — accepts optional image file via multipart/form-data ────
 router.post('/', upload.single('image'), ctrl.createSite); // POST /api/v1/sites

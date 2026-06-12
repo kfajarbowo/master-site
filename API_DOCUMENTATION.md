@@ -37,7 +37,7 @@ curl -X POST http://localhost:3003/api/v1/auth/logout -b "connect.sid=..."
 
 ## 🌐 2. Sites & IP Data — Site-Centric (`/api/v1/sites`)
 
-> **Auth:** Semua endpoint public (tanpa auth) — digunakan oleh desktop app.
+> **Auth:** GET = public | POST/PUT/PATCH/DELETE = session or API key
 
 ### 2.1 Get All Sites
 - **Endpoint:** `GET /api/v1/sites`
@@ -45,7 +45,9 @@ curl -X POST http://localhost:3003/api/v1/auth/logout -b "connect.sid=..."
   - `?type=SERVER` — hanya tampilkan IP bertipe SERVER
   - `?type=APP` — hanya tampilkan IP bertipe APP
   - `?app=bms` — hanya tampilkan IP untuk app key tertentu
-  - Bisa dikombinasi: `?type=APP&app=bms`
+  - `?includeRegion=true` — include region info in response
+  - `?region=PAPUA` — filter sites by region code
+  - Bisa dikombinasi: `?type=APP&app=bms&includeRegion=true`
 - **Contoh Pemanggilan:**
 ```bash
 # Semua sites + semua IP
@@ -56,12 +58,21 @@ curl http://localhost:3003/api/v1/sites?type=SERVER
 
 # Semua sites, tapi hanya IP untuk app BMS
 curl http://localhost:3003/api/v1/sites?app=bms
+
+# Sites with region info
+curl http://localhost:3003/api/v1/sites?includeRegion=true
+
+# Sites filtered by region
+curl http://localhost:3003/api/v1/sites?region=PAPUA
 ```
 
 ### 2.2 Get Single Site Detail
 - **Endpoint:** `GET /api/v1/sites/{siteCode}`
+- **Query Filters (opsional):**
+  - `?includeRegion=true` — include region info
 ```bash
 curl http://localhost:3003/api/v1/sites/SITE-01
+curl http://localhost:3003/api/v1/sites/SITE-01?includeRegion=true
 ```
 
 ### 2.3 Get Site IPs Only
@@ -76,9 +87,18 @@ curl http://localhost:3003/api/v1/sites/SITE-02/ips
 curl http://localhost:3003/api/v1/sites/SITE-03/ips/eyesee
 ```
 
+### 2.5 Get Site Image
+- **Endpoint:** `GET /api/v1/sites/{siteCode}/image`
+- **Deskripsi:** Returns the site image as binary data with appropriate Content-Type header. Returns 404 if no image is uploaded.
+- **Contoh Pemanggilan:**
+```bash
+curl http://localhost:3003/api/v1/sites/SITE-01/image
+```
+- **Response:** Binary image data (JPEG, PNG, GIF, WebP, or SVG) with `Content-Type` header set accordingly. `Cache-Control: public, max-age=86400` (1 day cache).
+
 ---
 
-## 📱 3. App-Centric API (`/api/v1/apps`) — **NEW**
+## 📱 3. App-Centric API (`/api/v1/apps`)
 
 > Endpoint ini di-design khusus agar mudah dikonsumsi oleh masing-masing aplikasi (VComm, BMS, EyeSee, dll).  
 > Semua endpoint ini **read-only** dan **public** (tanpa auth).
@@ -132,8 +152,8 @@ curl http://localhost:3003/api/v1/apps/eyesee?site=SITE-05
     "type": "APP",
     "total": 22,
     "sites": [
-      { "siteCode": "SITE-01", "siteName": "Site 1", "blockIp": "172.27.0.0/27", "imageUrl": "/uploads/sites/SITE-01.png", "ip": "172.27.0.4", "subnet": "/27", "fullIp": "172.27.0.4/27", "port": 8502, "note": null },
-      { "siteCode": "SITE-02", "siteName": "Site 2", "blockIp": "172.27.0.32/27", "imageUrl": null, "ip": "172.27.0.36", "subnet": "/27", "fullIp": "172.27.0.36/27", "port": 8502, "note": null },
+      { "siteCode": "SITE-01", "siteName": "Site 1", "blockIp": "172.27.0.0/27", "hasImage": true, "imageUrl": "/api/v1/sites/SITE-01/image", "ip": "172.27.0.4", "subnet": "/27", "fullIp": "172.27.0.4/27", "port": 8502, "note": null },
+      { "siteCode": "SITE-02", "siteName": "Site 2", "blockIp": "172.27.0.32/27", "hasImage": false, "imageUrl": null, "ip": "172.27.0.36", "subnet": "/27", "fullIp": "172.27.0.36/27", "port": 8502, "note": null },
       ...
     ]
   }
@@ -155,7 +175,8 @@ curl http://localhost:3003/api/v1/apps/bms/SITE-03
     "siteCode": "SITE-03",
     "siteName": "Site 3",
     "blockIp": "172.27.0.64/27",
-    "imageUrl": "/uploads/sites/SITE-03.png",
+    "hasImage": true,
+    "imageUrl": "/api/v1/sites/SITE-03/image",
     "appKey": "bms",
     "appName": "Battle Management System",
     "type": "APP",
@@ -171,7 +192,7 @@ curl http://localhost:3003/api/v1/apps/bms/SITE-03
 
 ---
 
-## ⚡ 4. Quick Lookup (`/api/v1/lookup`) — **NEW**
+## ⚡ 4. Quick Lookup (`/api/v1/lookup`)
 
 > Endpoint minimalis untuk konsumsi mesin/script. Hanya mengembalikan data esensial.
 
@@ -200,7 +221,7 @@ curl http://localhost:3003/api/v1/lookup?app=bms&site=SITE-01
 
 ---
 
-## 📊 5. Summary / Statistics (`/api/v1/summary`) — **NEW**
+## 📊 5. Summary / Statistics (`/api/v1/summary`)
 
 - **Endpoint:** `GET /api/v1/summary`
 - **Deskripsi:** Statistik dashboard — total sites, total IPs, breakdown per kategori dan app.
@@ -233,44 +254,66 @@ curl http://localhost:3003/api/v1/summary
 
 ## ✏️ 6. Sites & IP Data — MODIFY (CRUD)
 
-> **Semua endpoint public** (tanpa auth) — digunakan oleh desktop app.
+> **Auth required:** Session cookie atau `X-API-Key` header.
 
 ### 6.1 Create New Site
 - **Endpoint:** `POST /api/v1/sites`
-- **Content-Type:** `multipart/form-data` (if uploading image) or `application/json` (without image)
 - **Required Fields:** `siteCode`, `siteName`, `blockIp`
-- **Optional Fields:** `description`, `regionId`, `ips` (array of IP entries, sent as JSON string in multipart), `image` (file upload — JPEG, PNG, GIF, WebP, SVG, max 5MB)
-- **Note:** When using `multipart/form-data`, the `ips` field must be sent as a JSON string (e.g. `ips='[{"appKey":"bms","ipAddress":"172.27.2.196"}]'`)
+- **Optional Fields:** `description`, `regionId`, `ips` (array of IP entries), `image` (file upload)
+- **Image Upload:** Send as `multipart/form-data` with the `image` field containing the image file. Max 5MB. Accepted types: JPEG, PNG, GIF, WebP, SVG.
+- **Contoh Pemanggilan (JSON, no image):**
 ```bash
-# Create site without image (JSON body)
 curl -X POST http://localhost:3003/api/v1/sites \
      -H "Content-Type: application/json" \
+     -H "X-API-Key: mysecretkey" \
      -d '{ "siteCode": "SITE-23", "siteName": "Site 23", "blockIp": "172.27.2.192/27" }'
-
-# Create site with image (multipart/form-data)
+```
+- **Contoh Pemanggilan (multipart, with image):**
+```bash
 curl -X POST http://localhost:3003/api/v1/sites \
      -H "X-API-Key: mysecretkey" \
      -F "siteCode=SITE-23" \
      -F "siteName=Site 23" \
      -F "blockIp=172.27.2.192/27" \
-     -F "image=@/path/to/site-photo.png"
+     -F "ips=[]" \
+     -F "image=@/path/to/image.jpg"
+```
+- **Response (with image):**
+```json
+{
+  "status": "success",
+  "data": {
+    "siteCode": "SITE-23",
+    "siteName": "Site 23",
+    "blockIp": "172.27.2.192/27",
+    "description": null,
+    "hasImage": true,
+    "imageUrl": "/api/v1/sites/SITE-23/image",
+    "ips": [...],
+    "regionCode": null,
+    "regionName": null
+  }
+}
 ```
 
 ### 6.2 Update Site Metadata
 - **Endpoint:** `PUT /api/v1/sites/{siteCode}`
-- **Content-Type:** `multipart/form-data` (if uploading image) or `application/json` (without image)
-- **Optional Fields:** `siteName`, `blockIp`, `description`, `regionId` (set to `null` to remove region), `image` (file upload — replaces existing image)
+- **Optional Fields:** `siteName`, `blockIp`, `description`, `regionId` (set to `null` to remove region), `image` (file upload to replace existing image)
+- **Contoh Pemanggilan (JSON, no image):**
 ```bash
-# Update site without image (JSON body)
 curl -X PUT http://localhost:3003/api/v1/sites/SITE-23 \
      -H "Content-Type: application/json" \
+     -H "X-API-Key: mysecretkey" \
      -d '{ "siteName": "Site 23 (Updated)", "description": "New description", "regionId": 1 }'
-
-# Update site with new image (multipart/form-data)
+```
+- **Contoh Pemanggilan (multipart, with new image):**
+```bash
 curl -X PUT http://localhost:3003/api/v1/sites/SITE-23 \
      -H "X-API-Key: mysecretkey" \
      -F "siteName=Site 23 (Updated)" \
-     -F "image=@/path/to/new-photo.png"
+     -F "description=New description" \
+     -F "regionId=1" \
+     -F "image=@/path/to/new-image.jpg"
 ```
 
 ### 6.3 Update Specific Site IP
@@ -278,20 +321,22 @@ curl -X PUT http://localhost:3003/api/v1/sites/SITE-23 \
 ```bash
 curl -X PATCH http://localhost:3003/api/v1/sites/SITE-01/ips/eyesee \
      -H "Content-Type: application/json" \
+     -H "X-API-Key: mysecretkey" \
      -d '{ "ipAddress": "192.168.1.15", "port": 3001 }'
 ```
 
 ### 6.4 Delete Site
 - **Endpoint:** `DELETE /api/v1/sites/{siteCode}`
+- **Note:** Associated image data in the database is automatically deleted.
 ```bash
-curl -X DELETE http://localhost:3003/api/v1/sites/SITE-23
+curl -X DELETE http://localhost:3003/api/v1/sites/SITE-23 -H "X-API-Key: mysecretkey"
 ```
 
 ---
 
-## 🗺️ 7. Regions (`/api/v1/regions`) — **NEW**
+## 🗺️ 7. Regions (`/api/v1/regions`)
 
-> Endpoint untuk mengelola region/wilayah. **Semua endpoint public** (tanpa auth) — digunakan oleh desktop app.
+> Endpoint untuk mengelola region/wilayah. GET = public, Mutation = session atau API key.
 
 ### 7.1 List All Regions
 - **Endpoint:** `GET /api/v1/regions`
@@ -308,7 +353,7 @@ curl http://localhost:3003/api/v1/regions
       "regionName": "Papua",
       "description": "Wilayah Papua — 22 site",
       "sites": [
-        { "siteCode": "SITE-01", "siteName": "Site 1", "blockIp": "172.27.0.0/27", "description": null, "imageUrl": "/uploads/sites/SITE-01.png" }
+        { "siteCode": "SITE-01", "siteName": "Site 1", "blockIp": "172.27.0.0/27", "description": null, "hasImage": true, "imageUrl": "/api/v1/sites/SITE-01/image" }
       ]
     }
   ],
@@ -340,7 +385,8 @@ curl http://localhost:3003/api/v1/regions/PAPUA/sites
         "siteCode": "SITE-01",
         "siteName": "Site 1",
         "blockIp": "172.27.0.0/27",
-        "imageUrl": "/uploads/sites/SITE-01.png",
+        "hasImage": true,
+        "imageUrl": "/api/v1/sites/SITE-01/image",
         "ips": [
           { "appKey": "router", "appName": "Gateway", "type": "SERVER", "highlighted": false, "ip": "172.27.0.1", "subnet": "/27", "fullIp": "172.27.0.1/27", "port": null, "note": null }
         ]
@@ -357,6 +403,7 @@ curl http://localhost:3003/api/v1/regions/PAPUA/sites
 ```bash
 curl -X POST http://localhost:3003/api/v1/regions \
      -H "Content-Type: application/json" \
+     -H "X-API-Key: mysecretkey" \
      -d '{ "regionCode": "JAKARTA", "regionName": "Jakarta", "description": "Wilayah Jakarta" }'
 ```
 
@@ -366,6 +413,7 @@ curl -X POST http://localhost:3003/api/v1/regions \
 ```bash
 curl -X PUT http://localhost:3003/api/v1/regions/JAKARTA \
      -H "Content-Type: application/json" \
+     -H "X-API-Key: mysecretkey" \
      -d '{ "regionName": "Jakarta (Updated)", "description": "Updated description" }'
 ```
 
@@ -373,20 +421,20 @@ curl -X PUT http://localhost:3003/api/v1/regions/JAKARTA \
 - **Endpoint:** `DELETE /api/v1/regions/{regionCode}`
 - **Note:** Sites linked to this region will have their `regionId` set to `null` (ON DELETE SET NULL).
 ```bash
-curl -X DELETE http://localhost:3003/api/v1/regions/JAKARTA
+curl -X DELETE http://localhost:3003/api/v1/regions/JAKARTA -H "X-API-Key: mysecretkey"
 ```
 
 ---
 
 ## ⚙️ 8. System / Utility
 
-### 7.1 Health Check
+### 8.1 Health Check
 - **Endpoint:** `GET /health`
 ```bash
 curl http://localhost:3003/health
 ```
 
-### 7.2 API Root Info
+### 8.2 API Root Info
 - **Endpoint:** `GET /api/v1/`
 ```bash
 curl http://localhost:3003/api/v1/
@@ -406,9 +454,9 @@ curl http://localhost:3003/api/v1/
 | `/api/v1/regions` | GET | ❌ | List semua regions |
 | `/api/v1/regions/:code` | GET | ❌ | Detail region + sites |
 | `/api/v1/regions/:code/sites` | GET | ❌ | Sites with IPs in region |
-| `/api/v1/regions` | POST | ❌ | Buat region baru (public for desktop app) |
-| `/api/v1/regions/:code` | PUT | ❌ | Update region (public for desktop app) |
-| `/api/v1/regions/:code` | DELETE | ❌ | Hapus region (public for desktop app) |
+| `/api/v1/regions` | POST | ✅ | Buat region baru |
+| `/api/v1/regions/:code` | PUT | ✅ | Update region |
+| `/api/v1/regions/:code` | DELETE | ✅ | Hapus region |
 | `/api/v1/sites` | GET | ❌ | List semua sites |
 | `/api/v1/sites?includeRegion=true` | GET | ❌ | Sites with region info |
 | `/api/v1/sites?region=PAPUA` | GET | ❌ | Sites filtered by region |
@@ -418,14 +466,19 @@ curl http://localhost:3003/api/v1/
 | `/api/v1/sites/:code?includeRegion=true` | GET | ❌ | Detail site with region |
 | `/api/v1/sites/:code/ips` | GET | ❌ | IP list per site |
 | `/api/v1/sites/:code/ips/:appKey` | GET | ❌ | IP spesifik per app per site |
-<<<<<<< HEAD
-| `/api/v1/sites` | POST | ❌ | Buat site baru (public) |
-| `/api/v1/sites/:code` | PUT | ❌ | Update metadata site (incl. regionId) (public) |
-| `/api/v1/sites/:code/ips/:appKey` | PATCH | ❌ | Update IP spesifik (public) |
-| `/api/v1/sites/:code` | DELETE | ❌ | Hapus site (public) |
-=======
-| `/api/v1/sites` | POST | ✅ | Buat site baru (+ optional image upload) |
-| `/api/v1/sites/:code` | PUT | ✅ | Update metadata site (incl. regionId, image) |
+| `/api/v1/sites/:code/image` | GET | ❌ | Site image (binary response) |
+| `/api/v1/sites` | POST | ✅ | Buat site baru (multipart or JSON) |
+| `/api/v1/sites/:code` | PUT | ✅ | Update metadata site (multipart or JSON) |
 | `/api/v1/sites/:code/ips/:appKey` | PATCH | ✅ | Update IP spesifik |
 | `/api/v1/sites/:code` | DELETE | ✅ | Hapus site |
->>>>>>> 1756bd75c10813c04ffcb0ff780ddcf23234aa87
+
+---
+
+## 📝 Notes on Image Storage
+
+- Images are stored **in the PostgreSQL database** as BYTEA (binary) data, not on the filesystem.
+- This ensures compatibility with **read-only filesystem environments** (AWS Lambda, etc.) and **Docker containers** without volume mounts.
+- The `imageUrl` field in API responses points to the image serving endpoint: `/api/v1/sites/{siteCode}/image`
+- The `hasImage` boolean field indicates whether a site has an uploaded image.
+- To retrieve the actual image binary, make a GET request to the `imageUrl` endpoint. The response will have the appropriate `Content-Type` header (e.g., `image/png`, `image/jpeg`).
+- Images are automatically deleted from the database when a site is deleted.

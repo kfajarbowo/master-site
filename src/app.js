@@ -82,14 +82,6 @@ app.use(
 	})
 );
 
-// ── Static files (uploaded site images) ────────────────────────────────────────
-app.use(
-	'/uploads',
-	express.static(path.join(__dirname, '../uploads'), {
-		maxAge: '1d',
-	})
-);
-
 // ── Health check (no auth) ───────────────────────────────────────────────────
 app.get('/health', (_req, res) => {
 	res.json({

@@ -101,7 +101,7 @@ async function getIpsByApp(rawAppKey, filters = {}) {
 					siteCode: true,
 					siteName: true,
 					blockIp: true,
-					imageUrl: true,
+					imageData: true,
 				},
 			},
 			appType: {
@@ -120,7 +120,10 @@ async function getIpsByApp(rawAppKey, filters = {}) {
 			siteCode: ip.site.siteCode,
 			siteName: ip.site.siteName,
 			blockIp: ip.site.blockIp,
-			imageUrl: ip.site.imageUrl || null,
+			hasImage: !!ip.site.imageData,
+			imageUrl: ip.site.imageData
+				? `/api/v1/sites/${ip.site.siteCode}/image`
+				: null,
 			ip: ip.ipAddress,
 			subnet: ip.subnet,
 			fullIp: `${ip.ipAddress}${ip.subnet}`,
@@ -148,7 +151,7 @@ async function getAppAtSite(rawAppKey, rawSiteCode) {
 					siteCode: true,
 					siteName: true,
 					blockIp: true,
-					imageUrl: true,
+					imageData: true,
 				},
 			},
 			appType: {
@@ -168,7 +171,10 @@ async function getAppAtSite(rawAppKey, rawSiteCode) {
 		siteCode: siteIp.site.siteCode,
 		siteName: siteIp.site.siteName,
 		blockIp: siteIp.site.blockIp,
-		imageUrl: siteIp.site.imageUrl || null,
+		hasImage: !!siteIp.site.imageData,
+		imageUrl: siteIp.site.imageData
+			? `/api/v1/sites/${siteIp.site.siteCode}/image`
+			: null,
 		appKey: siteIp.appType.key,
 		appName: siteIp.appType.name,
 		type: siteIp.appType.type,

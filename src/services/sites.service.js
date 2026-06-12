@@ -15,7 +15,8 @@ function formatSiteDetail(site, includeRegion = false) {
 		siteName: site.siteName,
 		blockIp: site.blockIp,
 		description: site.description || null,
-		imageUrl: site.imageUrl || null,
+		hasImage: !!site.imageData,
+		imageUrl: site.imageData ? `/api/v1/sites/${site.siteCode}/image` : null,
 		ips: site.ips.map(ip => ({
 			appKey: ip.appType.key,
 			appName: ip.appType.name,
@@ -127,7 +128,7 @@ async function getSiteIps(rawCode) {
 		select: {
 			siteCode: true,
 			siteName: true,
-			imageUrl: true,
+			imageData: true,
 			ips: {
 				include: {
 					appType: {
@@ -148,7 +149,8 @@ async function getSiteIps(rawCode) {
 	return {
 		siteCode: site.siteCode,
 		siteName: site.siteName,
-		imageUrl: site.imageUrl || null,
+		hasImage: !!site.imageData,
+		imageUrl: site.imageData ? `/api/v1/sites/${site.siteCode}/image` : null,
 		ips: site.ips.map(ip => ({
 			appKey: ip.appType.key,
 			appName: ip.appType.name,
@@ -168,7 +170,13 @@ async function getSiteIpByAppKey(rawCode, rawAppKey) {
 	const siteIp = await prisma.siteIp.findFirst({
 		where: { site: { siteCode }, appType: { key: appKey } },
 		include: {
-			site: { select: { siteCode: true, siteName: true, imageUrl: true } },
+			site: {
+				select: {
+					siteCode: true,
+					siteName: true,
+					imageData: true,
+				},
+			},
 			appType: {
 				select: { key: true, name: true, type: true, isHighlighted: true },
 			},
@@ -182,7 +190,10 @@ async function getSiteIpByAppKey(rawCode, rawAppKey) {
 	return {
 		siteCode: siteIp.site.siteCode,
 		siteName: siteIp.site.siteName,
-		imageUrl: siteIp.site.imageUrl || null,
+		hasImage: !!siteIp.site.imageData,
+		imageUrl: siteIp.site.imageData
+			? `/api/v1/sites/${siteIp.site.siteCode}/image`
+			: null,
 		appKey: siteIp.appType.key,
 		appName: siteIp.appType.name,
 		type: siteIp.appType.type,
@@ -195,9 +206,26 @@ async function getSiteIpByAppKey(rawCode, rawAppKey) {
 	};
 }
 
+/**
+ * Get site image binary data for serving as a direct image response.
+ * Returns { imageData: Buffer | null, imageMime: string | null }
+ */
+async function getSiteImage(rawCode) {
+	const siteCode = normalizeSiteCode(rawCode);
+	const site = await prisma.site.findUnique({
+		where: { siteCode },
+		select: { imageData: true, imageMime: true },
+	});
+	if (!site) throw createError(404, `Site '${siteCode}' tidak ditemukan.`);
+	return {
+		imageData: site.imageData,
+		imageMime: site.imageMime,
+	};
+}
+
 // ── CREATE ────────────────────────────────────────────────────────────────────
 
-async function createSite(body, imageUrl = null) {
+async function createSite(body, imageData = null, imageMime = null) {
 	const { siteCode, siteName, blockIp, description, ips, regionId } = body;
 	const code = normalizeSiteCode(siteCode);
 
@@ -234,7 +262,8 @@ async function createSite(body, imageUrl = null) {
 			siteName,
 			blockIp,
 			description: description || null,
-			imageUrl: imageUrl || null,
+			imageData: imageData || null,
+			imageMime: imageMime || null,
 			regionId: regionId || null,
 			ips: { create: ipEntries },
 		},
@@ -248,7 +277,12 @@ async function createSite(body, imageUrl = null) {
 
 // ── UPDATE ────────────────────────────────────────────────────────────────────
 
-async function updateSite(rawCode, body, imageUrl = undefined) {
+async function updateSite(
+	rawCode,
+	body,
+	imageData = undefined,
+	imageMime = undefined
+) {
 	const siteCode = normalizeSiteCode(rawCode);
 	const site = await prisma.site.findUnique({ where: { siteCode } });
 	if (!site) throw createError(404, `Site '${siteCode}' tidak ditemukan.`);
@@ -267,36 +301,25 @@ async function updateSite(rawCode, body, imageUrl = undefined) {
 		}
 	}
 
-	// If imageUrl is undefined (no new file uploaded), keep existing value.
-	// If imageUrl is a string (new file uploaded), delete old image and set new path.
-	if (imageUrl && site.imageUrl && site.imageUrl !== imageUrl) {
-		// Delete old image file from filesystem
-		const fs = require('fs');
-		const path = require('path');
-		const oldFilePath = path.join(process.cwd(), site.imageUrl);
-		try {
-			fs.unlinkSync(oldFilePath);
-		} catch (err) {
-			if (err.code !== 'ENOENT') {
-				const { logger } = require('../utils/logger');
-				logger.warn(
-					{ err, oldFilePath },
-					'Failed to delete old site image file'
-				);
-			}
-		}
+	// Build update data object
+	const data = {
+		siteName: body.siteName ?? undefined,
+		blockIp: body.blockIp ?? undefined,
+		description: body.description ?? undefined,
+		regionId: body.regionId !== undefined ? body.regionId : undefined,
+	};
+
+	// If a new image is uploaded, update imageData and imageMime
+	// If imageData is explicitly null (user wants to remove image), set both to null
+	// If imageData is undefined (no image uploaded, keep existing), don't update
+	if (imageData !== undefined) {
+		data.imageData = imageData;
+		data.imageMime = imageMime;
 	}
-	const imageUpdate = imageUrl !== undefined ? imageUrl : undefined;
 
 	const updated = await prisma.site.update({
 		where: { siteCode },
-		data: {
-			siteName: body.siteName ?? undefined,
-			blockIp: body.blockIp ?? undefined,
-			description: body.description ?? undefined,
-			imageUrl: imageUpdate,
-			regionId: body.regionId !== undefined ? body.regionId : undefined,
-		},
+		data,
 		include: {
 			region: { select: { regionCode: true, regionName: true } },
 		},
@@ -306,7 +329,10 @@ async function updateSite(rawCode, body, imageUrl = undefined) {
 		siteName: updated.siteName,
 		blockIp: updated.blockIp,
 		description: updated.description || null,
-		imageUrl: updated.imageUrl || null,
+		hasImage: !!updated.imageData,
+		imageUrl: updated.imageData
+			? `/api/v1/sites/${updated.siteCode}/image`
+			: null,
 		regionCode: updated.region?.regionCode ?? null,
 		regionName: updated.region?.regionName ?? null,
 	};
@@ -363,22 +389,7 @@ async function deleteSite(rawCode) {
 	const site = await prisma.site.findUnique({ where: { siteCode } });
 	if (!site) throw createError(404, `Site '${siteCode}' tidak ditemukan.`);
 
-	// Delete associated image file from filesystem
-	if (site.imageUrl) {
-		const fs = require('fs');
-		const path = require('path');
-		const filePath = path.join(process.cwd(), site.imageUrl);
-		try {
-			fs.unlinkSync(filePath);
-		} catch (err) {
-			// File may not exist (e.g., already deleted or never uploaded) — ignore
-			if (err.code !== 'ENOENT') {
-				const { logger } = require('../utils/logger');
-				logger.warn({ err, filePath }, 'Failed to delete site image file');
-			}
-		}
-	}
-
+	// No need to delete files from filesystem — images are stored in DB
 	// Cascade delete via Prisma schema (onDelete: Cascade)
 	await prisma.site.delete({ where: { siteCode } });
 	return { deleted: siteCode };
@@ -389,6 +400,7 @@ module.exports = {
 	getSiteByCode,
 	getSiteIps,
 	getSiteIpByAppKey,
+	getSiteImage,
 	createSite,
 	updateSite,
 	updateSiteIp,

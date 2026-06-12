@@ -2,7 +2,6 @@
 
 const svc = require('../services/sites.service');
 const { success } = require('../utils/response');
-const { finalizeFilename } = require('../middlewares/upload');
 
 // ── READ ──────────────────────────────────────────────────────
 async function listSites(req, res, next) {
@@ -51,6 +50,21 @@ async function getSiteIpByApp(req, res, next) {
 	}
 }
 
+// ── Serve site image as binary response ──────────────────────────
+async function getSiteImage(req, res, next) {
+	try {
+		const { imageData, imageMime } = await svc.getSiteImage(req.params.code);
+		if (!imageData) {
+			return res.status(404).send('No image');
+		}
+		res.setHeader('Content-Type', imageMime || 'image/jpeg');
+		res.setHeader('Cache-Control', 'public, max-age=86400');
+		return res.send(imageData);
+	} catch (err) {
+		next(err);
+	}
+}
+
 // ── CREATE ────────────────────────────────────────────────────
 async function createSite(req, res, next) {
 	try {
@@ -75,14 +89,11 @@ async function createSite(req, res, next) {
 			);
 		}
 
-		// Build imageUrl from uploaded file (if any)
-		// Use finalizeFilename to rename temp file to site-based name
-		const finalFilename = req.file
-			? finalizeFilename(req.file, body.siteCode)
-			: null;
-		const imageUrl = finalFilename ? `/uploads/sites/${finalFilename}` : null;
+		// Extract image data from multer memoryStorage buffer
+		const imageData = req.file ? req.file.buffer : null;
+		const imageMime = req.file ? req.file.mimetype : null;
 
-		return success(res, await svc.createSite(body, imageUrl), 201);
+		return success(res, await svc.createSite(body, imageData, imageMime), 201);
 	} catch (err) {
 		next(err);
 	}
@@ -97,14 +108,14 @@ async function updateSite(req, res, next) {
 			body.regionId = parseInt(body.regionId, 10) || undefined;
 		}
 
-		// Build imageUrl from uploaded file (if any)
-		// Use finalizeFilename to rename temp file to site-based name
-		const finalFilename = req.file
-			? finalizeFilename(req.file, req.params.code)
-			: null;
-		const imageUrl = req.file ? `/uploads/sites/${finalFilename}` : undefined;
+		// Extract image data from multer memoryStorage buffer
+		const imageData = req.file ? req.file.buffer : undefined;
+		const imageMime = req.file ? req.file.mimetype : undefined;
 
-		return success(res, await svc.updateSite(req.params.code, body, imageUrl));
+		return success(
+			res,
+			await svc.updateSite(req.params.code, body, imageData, imageMime)
+		);
 	} catch (err) {
 		next(err);
 	}
@@ -138,6 +149,7 @@ module.exports = {
 	getSite,
 	getSiteIps,
 	getSiteIpByApp,
+	getSiteImage,
 	createSite,
 	updateSite,
 	updateSiteIp,
