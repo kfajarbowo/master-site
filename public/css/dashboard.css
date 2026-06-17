@@ -70,26 +70,55 @@ body::before {
   box-shadow: var(--shadow-sm);
 }
 
-.logo {
-  width: 42px;
-  height: 42px;
-  border-radius: 50%;
-  flex-shrink: 0;
-  background: linear-gradient(135deg, var(--cyan), var(--blue));
+.brand-wrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+}
+
+.app-logo-box {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 2px 8px rgba(14, 165, 233, .25);
+  flex-shrink: 0;
+  cursor: pointer;
+  background: var(--bg-primary);
+  border: 1px dashed var(--border-hi);
+  transition: border-color .2s, box-shadow .2s;
+  position: relative;
 }
 
-.logo svg {
-  width: 24px;
-  height: 24px;
-  fill: white;
+.app-logo-box:hover {
+  border-color: var(--cyan);
+  border-style: solid;
+  box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.15);
 }
 
-.brand {
-  flex: 1;
+.app-logo-box img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.app-logo-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  color: var(--text-3);
+  opacity: 0.6;
+}
+
+.app-logo-placeholder svg {
+  width: 20px;
+  height: 20px;
 }
 
 .brand h1 {
@@ -1621,6 +1650,195 @@ body::before {
   from { opacity: 0; transform: scale(.92); }
   to { opacity: 1; transform: scale(1); }
 }
+
+/* ── Site Logo — Detail Section ──────────────────── */
+.site-logo-section {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 22px;
+  padding: 16px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+}
+
+.site-logo-preview {
+  width: 72px;
+  height: 72px;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 2px solid var(--border);
+  background: var(--bg-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: border-color .2s;
+}
+
+.site-logo-preview:hover {
+  border-color: var(--cyan);
+}
+
+.site-logo-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.site-logo-preview svg {
+  width: 28px;
+  height: 28px;
+  color: var(--text-3);
+  opacity: .4;
+}
+
+.site-logo-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.site-logo-label {
+  font-size: .68rem;
+  font-weight: 600;
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  margin-bottom: 4px;
+}
+
+.site-logo-status {
+  font-size: .78rem;
+  color: var(--text-2);
+  margin-bottom: 8px;
+}
+
+.site-logo-status .has-logo {
+  color: var(--green);
+  font-weight: 500;
+}
+
+.site-logo-actions {
+  display: flex;
+  gap: 6px;
+}
+
+/* ── Grid Card Logo Overlay ──────────────────────── */
+.gc-logo-overlay {
+  position: absolute;
+  bottom: 4px;
+  right: 4px;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1.5px solid rgba(255,255,255,.8);
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0,0,0,.15);
+}
+
+.gc-logo-overlay img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.gc-thumb {
+  position: relative;
+}
+
+/* ── Logo Upload Area ────────────────────────────── */
+.logo-upload-area {
+  border: 2px dashed var(--border-hi);
+  border-radius: var(--radius);
+  padding: 24px 16px;
+  text-align: center;
+  background: var(--bg-primary);
+  transition: border-color .2s, background .2s;
+  cursor: pointer;
+}
+
+.logo-upload-area:hover,
+.logo-upload-area.dragover {
+  border-color: var(--cyan);
+  background: #f0f9ff;
+}
+
+.logo-upload-area svg {
+  width: 32px;
+  height: 32px;
+  color: var(--text-3);
+  margin-bottom: 8px;
+}
+
+.logo-upload-area .upload-text {
+  font-size: .78rem;
+  color: var(--text-2);
+  margin-bottom: 4px;
+}
+
+.logo-upload-area .upload-hint {
+  font-size: .65rem;
+  color: var(--text-3);
+}
+
+.logo-upload-preview {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
+.logo-upload-preview img {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+}
+
+.logo-upload-preview .file-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.logo-upload-preview .file-name {
+  font-size: .78rem;
+  font-weight: 500;
+  color: var(--text-1);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.logo-upload-preview .file-size {
+  font-size: .65rem;
+  color: var(--text-3);
+}
+
+/* ── Sidebar Logo Badge ──────────────────────────── */
+.si-logo-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: .5rem;
+  color: var(--green);
+  vertical-align: middle;
+  margin-left: 2px;
+}
+
+.si-logo-badge svg {
+  width: 9px;
+  height: 9px;
+}
+
 
 /* ── Responsive ────────────────────────────────────── */
 @media (max-width: 768px) {

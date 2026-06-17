@@ -93,6 +93,7 @@ async function init() {
 
 	renderSidebarLoading();
 	renderGridLoading();
+	loadGlobalLogo();
 	try {
 		// Load regions first (for filter dropdown)
 		const regionsRes = await api('/regions');
@@ -183,7 +184,7 @@ function renderSidebar(sites) {
 				s.regionCode
 					? ` <span class="si-region">${esc(s.regionCode)}</span>`
 					: ''
-			}${s.hasImage ? ` <span class="si-img-badge" title="Memiliki gambar">${iconImage()}</span>` : ''}</div>
+			}${s.hasImage ? ` <span class="si-img-badge" title="Memiliki gambar">${iconImage()}</span>` : ''}${s.hasLogo ? ` <span class="si-logo-badge" title="Memiliki logo">${iconLogo()}</span>` : ''}</div>
         <div class="si-name">${s.siteName}</div>
         <div class="si-ip">${s.blockIp}</div>
       </div>
@@ -220,6 +221,7 @@ function renderGrid(sites) {
               ? `<img src="${s.imageUrl}" alt="${esc(s.siteName)}" loading="lazy">`
               : `<div class="gc-thumb-default">${iconImagePlaceholder()}</div>`
             }
+            ${s.hasLogo ? `<div class="gc-logo-overlay"><img src="${s.logoUrl}" alt="logo" loading="lazy"></div>` : ''}
           </div>
           <div class="gc-top-row">
             <div class="gc-code">${s.siteCode}</div>
@@ -384,6 +386,30 @@ function renderDetail(site) {
       </div>
 
       ${imageHtml}
+
+      <div class="site-logo-section">
+        <div class="site-logo-preview">
+          ${site.hasLogo
+            ? `<img src="${site.logoUrl}" alt="Logo ${esc(site.siteName)}">`
+            : iconLogoPlaceholder()
+          }
+        </div>
+        <div class="site-logo-info">
+          <div class="site-logo-label">Logo Site</div>
+          <div class="site-logo-status">
+            ${site.hasLogo
+              ? `<span class="has-logo">✓ Logo tersedia</span>`
+              : `Belum ada logo untuk site ini`
+            }
+          </div>
+          <div class="site-logo-actions">
+            <button class="tbl-btn" onclick="openLogoUploadModal('${site.siteCode}', '${esc(site.siteName)}', ${site.hasLogo})">
+              ${site.hasLogo ? iconEdit() + ' Ganti Logo' : iconUpload() + ' Upload Logo'}
+            </button>
+            ${site.hasLogo ? `<button class="tbl-btn" style="color:var(--red);border-color:#fecaca" onclick="deleteLogo('${site.siteCode}')">${iconTrash()} Hapus Logo</button>` : ''}
+          </div>
+        </div>
+      </div>
 
       <div class="info-row">
         <div class="info-card"><div class="ic-label">Site ID</div><div class="ic-value cyan">${
@@ -858,6 +884,15 @@ function iconImagePlaceholder() {
 function iconZoom() {
 	return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>`;
 }
+function iconLogo() {
+	return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>`;
+}
+function iconLogoPlaceholder() {
+	return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>`;
+}
+function iconUpload() {
+	return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>`;
+}
 
 // ── Lightbox (image zoom) ───────────────────────────────────────
 function openLightbox(imageUrl, altText) {
@@ -1205,6 +1240,349 @@ function openAssignRegionModal(siteCode, currentRegionCode, currentRegionName) {
 			toast(err.message, 'err');
 			btn.disabled = false;
 			btn.innerHTML = `${iconSave()} Simpan`;
+		}
+	});
+}
+
+// ── Logo upload modal ────────────────────────────────────────────
+function openLogoUploadModal(siteCode, siteName, hasLogo) {
+	const backdrop = document.createElement('div');
+	backdrop.className = 'modal-backdrop open';
+	backdrop.style.zIndex = '500';
+	backdrop.innerHTML = `
+    <div class="modal" style="max-width:440px">
+      <div class="modal-header">
+        <div class="modal-title">${hasLogo ? 'Ganti' : 'Upload'} Logo — ${esc(siteCode)}</div>
+        <button class="modal-close" id="logo-close">&times;</button>
+      </div>
+      <div id="logo-upload-container">
+        <div class="logo-upload-area" id="logo-drop-area">
+          ${iconUpload()}
+          <div class="upload-text">Klik atau seret file logo ke sini</div>
+          <div class="upload-hint">Format: JPEG, PNG, GIF, WebP, SVG — Maks 5MB</div>
+        </div>
+        <input type="file" id="logo-file-input" accept="image/*" style="display:none">
+      </div>
+      <div id="logo-preview-container" style="display:none"></div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" id="logo-cancel">Batal</button>
+        <button class="btn btn-primary" id="logo-save" disabled>
+          ${iconUpload()} Upload Logo
+        </button>
+      </div>
+    </div>
+  `;
+	document.body.appendChild(backdrop);
+
+	const dropArea = backdrop.querySelector('#logo-drop-area');
+	const fileInput = backdrop.querySelector('#logo-file-input');
+	const previewContainer = backdrop.querySelector('#logo-preview-container');
+	const uploadContainer = backdrop.querySelector('#logo-upload-container');
+	const saveBtn = backdrop.querySelector('#logo-save');
+	let selectedFile = null;
+
+	// Click to browse
+	dropArea.addEventListener('click', () => fileInput.click());
+
+	// Drag and drop
+	dropArea.addEventListener('dragover', (e) => {
+		e.preventDefault();
+		dropArea.classList.add('dragover');
+	});
+	dropArea.addEventListener('dragleave', () => {
+		dropArea.classList.remove('dragover');
+	});
+	dropArea.addEventListener('drop', (e) => {
+		e.preventDefault();
+		dropArea.classList.remove('dragover');
+		const file = e.dataTransfer.files[0];
+		if (file && file.type.startsWith('image/')) {
+			handleFileSelect(file);
+		}
+	});
+
+	// File input change
+	fileInput.addEventListener('change', () => {
+		if (fileInput.files[0]) handleFileSelect(fileInput.files[0]);
+	});
+
+	function handleFileSelect(file) {
+		if (file.size > 5 * 1024 * 1024) {
+			toast('File terlalu besar. Maksimum 5MB.', 'err');
+			return;
+		}
+		selectedFile = file;
+		const reader = new FileReader();
+		reader.onload = (e) => {
+			uploadContainer.style.display = 'none';
+			previewContainer.style.display = '';
+			previewContainer.innerHTML = `
+				<div class="logo-upload-preview">
+					<img src="${e.target.result}" alt="Preview">
+					<div class="file-info">
+						<div class="file-name">${esc(file.name)}</div>
+						<div class="file-size">${(file.size / 1024).toFixed(1)} KB</div>
+					</div>
+					<button class="tbl-btn" id="logo-change-file">Ganti</button>
+				</div>
+			`;
+			previewContainer.querySelector('#logo-change-file').addEventListener('click', () => {
+				selectedFile = null;
+				uploadContainer.style.display = '';
+				previewContainer.style.display = 'none';
+				fileInput.value = '';
+				saveBtn.disabled = true;
+			});
+			saveBtn.disabled = false;
+		};
+		reader.readAsDataURL(file);
+	}
+
+	// Close modal
+	const closeModal = () => backdrop.remove();
+	backdrop.querySelector('#logo-close').addEventListener('click', closeModal);
+	backdrop.querySelector('#logo-cancel').addEventListener('click', closeModal);
+	backdrop.addEventListener('click', (e) => {
+		if (e.target === backdrop) closeModal();
+	});
+
+	// Save / Upload
+	saveBtn.addEventListener('click', async () => {
+		if (!selectedFile) return;
+		saveBtn.disabled = true;
+		saveBtn.textContent = 'Mengunggah...';
+
+		try {
+			const formData = new FormData();
+			formData.append('logo', selectedFile);
+
+			const res = await fetch(`${API_BASE}/sites/${siteCode}/logo`, {
+				method: 'PUT',
+				credentials: 'same-origin',
+				body: formData,
+			});
+			if (res.status === 401) {
+				window.location.replace('/login');
+				return;
+			}
+			const body = await res.json().catch(() => ({}));
+			if (!res.ok) throw new Error(body.message || `HTTP ${res.status}`);
+
+			closeModal();
+			toast('Logo berhasil diupload!');
+
+			// Reload data
+			const { data, meta } = await api('/sites?includeRegion=true');
+			allSites = data;
+			renderSidebar(filtered());
+			if (activeCode === siteCode) {
+				const { data: siteData } = await api(`/sites/${siteCode}?includeRegion=true`);
+				renderDetail(siteData);
+			}
+		} catch (err) {
+			toast(err.message, 'err');
+			saveBtn.disabled = false;
+			saveBtn.innerHTML = `${iconUpload()} Upload Logo`;
+		}
+	});
+}
+
+async function deleteLogo(siteCode) {
+	const confirmed = confirm(`Hapus logo untuk site ${siteCode}?`);
+	if (!confirmed) return;
+
+	try {
+		await api(`/sites/${siteCode}/logo`, { method: 'DELETE' });
+		toast('Logo berhasil dihapus!');
+
+		// Reload data
+		const { data, meta } = await api('/sites?includeRegion=true');
+		allSites = data;
+		renderSidebar(filtered());
+		if (activeCode === siteCode) {
+			const { data: siteData } = await api(`/sites/${siteCode}?includeRegion=true`);
+			renderDetail(siteData);
+		}
+	} catch (err) {
+		toast(err.message, 'err');
+	}
+}
+
+// ── Global Logo ──────────────────────────────────────────────────
+async function loadGlobalLogo() {
+	try {
+		const res = await fetch(`${API_BASE}/settings/logo/info`);
+		const data = await res.json().catch(() => ({}));
+		if (data.status === 'success' && data.data.hasLogo) {
+			const logoBox = document.getElementById('app-logo-box');
+			logoBox.style.borderStyle = 'solid';
+			// Menggunakan timestamp pembaruan terakhir agar gambar bisa di-cache browser dengan aman!
+			const cacheBuster = data.data.updatedAt || Date.now();
+			logoBox.innerHTML = `<img src="${data.data.logoUrl}?t=${cacheBuster}" alt="Master IP Logo">`;
+		}
+	} catch (err) {
+		console.error('Failed to load global logo info:', err);
+	}
+}
+
+function openGlobalLogoModal() {
+	const backdrop = document.createElement('div');
+	backdrop.className = 'modal-backdrop open';
+	backdrop.style.zIndex = '600';
+	backdrop.innerHTML = `
+    <div class="modal" style="max-width:440px">
+      <div class="modal-header">
+        <div class="modal-title">Ganti Logo Aplikasi Utama</div>
+        <button class="modal-close" id="glogo-close">&times;</button>
+      </div>
+      <div id="glogo-upload-container">
+        <div class="logo-upload-area" id="glogo-drop-area">
+          ${iconUpload()}
+          <div class="upload-text">Klik atau seret file logo ke sini</div>
+          <div class="upload-hint">Format: JPEG, PNG, GIF, WebP, SVG — Maks 5MB</div>
+        </div>
+        <input type="file" id="glogo-file-input" accept="image/*" style="display:none">
+      </div>
+      <div id="glogo-preview-container" style="display:none"></div>
+      <div class="modal-footer" style="justify-content: space-between;">
+        <button class="btn btn-ghost" style="color:var(--red);" id="glogo-delete">Hapus Logo</button>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-ghost" id="glogo-cancel">Batal</button>
+          <button class="btn btn-primary" id="glogo-save" disabled>
+            ${iconUpload()} Upload
+          </button>
+        </div>
+      </div>
+    </div>
+  `;
+	document.body.appendChild(backdrop);
+
+	const dropArea = backdrop.querySelector('#glogo-drop-area');
+	const fileInput = backdrop.querySelector('#glogo-file-input');
+	const previewContainer = backdrop.querySelector('#glogo-preview-container');
+	const uploadContainer = backdrop.querySelector('#glogo-upload-container');
+	const saveBtn = backdrop.querySelector('#glogo-save');
+	const deleteBtn = backdrop.querySelector('#glogo-delete');
+	let selectedFile = null;
+
+	// Click to browse
+	dropArea.addEventListener('click', () => fileInput.click());
+
+	// Drag and drop
+	dropArea.addEventListener('dragover', (e) => {
+		e.preventDefault();
+		dropArea.classList.add('dragover');
+	});
+	dropArea.addEventListener('dragleave', () => {
+		dropArea.classList.remove('dragover');
+	});
+	dropArea.addEventListener('drop', (e) => {
+		e.preventDefault();
+		dropArea.classList.remove('dragover');
+		const file = e.dataTransfer.files[0];
+		if (file && file.type.startsWith('image/')) {
+			handleFileSelect(file);
+		}
+	});
+
+	// File input change
+	fileInput.addEventListener('change', () => {
+		if (fileInput.files[0]) handleFileSelect(fileInput.files[0]);
+	});
+
+	function handleFileSelect(file) {
+		if (file.size > 5 * 1024 * 1024) {
+			toast('File terlalu besar. Maksimum 5MB.', 'err');
+			return;
+		}
+		selectedFile = file;
+		const reader = new FileReader();
+		reader.onload = (e) => {
+			uploadContainer.style.display = 'none';
+			previewContainer.style.display = '';
+			previewContainer.innerHTML = `
+				<div class="logo-upload-preview">
+					<img src="${e.target.result}" alt="Preview">
+					<div class="file-info">
+						<div class="file-name">${esc(file.name)}</div>
+						<div class="file-size">${(file.size / 1024).toFixed(1)} KB</div>
+					</div>
+					<button class="tbl-btn" id="glogo-change-file">Ganti</button>
+				</div>
+			`;
+			previewContainer.querySelector('#glogo-change-file').addEventListener('click', () => {
+				selectedFile = null;
+				uploadContainer.style.display = '';
+				previewContainer.style.display = 'none';
+				fileInput.value = '';
+				saveBtn.disabled = true;
+			});
+			saveBtn.disabled = false;
+		};
+		reader.readAsDataURL(file);
+	}
+
+	// Close modal
+	const closeModal = () => backdrop.remove();
+	backdrop.querySelector('#glogo-close').addEventListener('click', closeModal);
+	backdrop.querySelector('#glogo-cancel').addEventListener('click', closeModal);
+	backdrop.addEventListener('click', (e) => {
+		if (e.target === backdrop) closeModal();
+	});
+
+	// Save / Upload
+	saveBtn.addEventListener('click', async () => {
+		if (!selectedFile) return;
+		saveBtn.disabled = true;
+		saveBtn.textContent = 'Mengunggah...';
+
+		try {
+			const formData = new FormData();
+			formData.append('logo', selectedFile);
+
+			const res = await fetch(`${API_BASE}/settings/logo`, {
+				method: 'PUT',
+				credentials: 'same-origin',
+				body: formData,
+			});
+			if (res.status === 401) {
+				window.location.replace('/login');
+				return;
+			}
+			const body = await res.json().catch(() => ({}));
+			if (!res.ok) throw new Error(body.message || `HTTP ${res.status}`);
+
+			closeModal();
+			toast('Logo aplikasi berhasil diupload!');
+			loadGlobalLogo();
+		} catch (err) {
+			toast(err.message, 'err');
+			saveBtn.disabled = false;
+			saveBtn.innerHTML = `${iconUpload()} Upload`;
+		}
+	});
+
+	// Delete
+	deleteBtn.addEventListener('click', async () => {
+		const confirmed = confirm('Yakin ingin menghapus logo aplikasi?');
+		if (!confirmed) return;
+
+		try {
+			await fetch(`${API_BASE}/settings/logo`, {
+				method: 'DELETE',
+				credentials: 'same-origin',
+			});
+			closeModal();
+			toast('Logo berhasil dihapus');
+			const logoBox = document.getElementById('app-logo-box');
+			logoBox.style.borderStyle = 'dashed';
+			logoBox.innerHTML = `
+				<div class="app-logo-placeholder">
+					<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+				</div>
+			`;
+		} catch (err) {
+			toast(err.message, 'err');
 		}
 	});
 }

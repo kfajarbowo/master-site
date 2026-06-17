@@ -406,3 +406,5 @@ module.exports = {
 	updateSiteIp,
 	deleteSite,
 };
+
+// trigger restart

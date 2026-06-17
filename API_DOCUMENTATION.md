@@ -96,6 +96,54 @@ curl http://localhost:3003/api/v1/sites/SITE-01/image
 ```
 - **Response:** Binary image data (JPEG, PNG, GIF, WebP, or SVG) with `Content-Type` header set accordingly. `Cache-Control: public, max-age=86400` (1 day cache).
 
+### 2.6 Get Site Logo
+- **Endpoint:** `GET /api/v1/sites/{siteCode}/logo`
+- **Deskripsi:** Returns the site logo as binary data with appropriate Content-Type header. Returns 404 if no logo is uploaded.
+- **Contoh Pemanggilan:**
+```bash
+curl http://localhost:3003/api/v1/sites/SITE-01/logo
+```
+- **Response:** Binary image data with `Content-Type` header. `Cache-Control: public, max-age=86400` (1 day cache).
+
+### 2.7 Upload/Replace Site Logo
+- **Endpoint:** `PUT /api/v1/sites/{siteCode}/logo`
+- **Deskripsi:** Upload atau ganti logo untuk site tertentu. Menggunakan `multipart/form-data` dengan field name `logo`.
+- **Contoh Pemanggilan:**
+```bash
+curl -X PUT http://localhost:3003/api/v1/sites/SITE-01/logo \
+  -F "logo=@/path/to/logo.png"
+```
+- **Response:**
+```json
+{
+  "status": "success",
+  "data": {
+    "siteCode": "SITE-01",
+    "siteName": "Site 1",
+    "hasLogo": true,
+    "logoUrl": "/api/v1/sites/SITE-01/logo"
+  }
+}
+```
+
+### 2.8 Delete Site Logo
+- **Endpoint:** `DELETE /api/v1/sites/{siteCode}/logo`
+- **Deskripsi:** Hapus logo dari site (set ke null).
+- **Contoh Pemanggilan:**
+```bash
+curl -X DELETE http://localhost:3003/api/v1/sites/SITE-01/logo
+```
+- **Response:**
+```json
+{
+  "status": "success",
+  "data": {
+    "siteCode": "SITE-01",
+    "logoRemoved": true
+  }
+}
+```
+
 ---
 
 ## 📱 3. App-Centric API (`/api/v1/apps`)

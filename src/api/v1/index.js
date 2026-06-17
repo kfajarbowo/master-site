@@ -5,6 +5,7 @@ const sitesRoutes = require('./routes/sites.routes');
 const appsRoutes = require('./routes/apps.routes');
 const authRoutes = require('./routes/auth.routes');
 const regionsRoutes = require('./routes/regions.routes');
+const settingsRoutes = require('./routes/settings.routes');
 const appsCtrl = require('../../controllers/apps.controller');
 
 const router = Router();
@@ -47,6 +48,12 @@ router.get('/', (_req, res) => {
 				'PUT  /api/v1/regions/:code                 — update region (public)',
 				'DELETE /api/v1/regions/:code               — delete region (public)',
 			],
+			settings: [
+				'GET    /api/v1/settings/logo             — serve app logo binary (public)',
+				'GET    /api/v1/settings/logo/info        — check if logo exists (public)',
+				'PUT    /api/v1/settings/logo             — upload/replace app logo (public)',
+				'DELETE /api/v1/settings/logo             — remove app logo (public)',
+			],
 		},
 		auth: 'All CRUD endpoints are public (no auth required). Browser dashboard still uses session cookie for login.',
 	});
@@ -69,5 +76,8 @@ router.use('/sites', sitesRoutes);
 
 // ── Region routes (all public — used by desktop app) ────────────────────
 router.use('/regions', regionsRoutes);
+
+// ── Settings routes (logo etc. — public) ────────────────────────────────
+router.use('/settings', settingsRoutes);
 
 module.exports = router;

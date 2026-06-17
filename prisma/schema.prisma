@@ -95,3 +95,15 @@ model User {
 
   @@map("users")
 }
+
+// ── AppSetting: key-value store for global app settings ─────
+model AppSetting {
+  id        Int      @id @default(autoincrement())
+  key       String   @unique @db.VarChar(50)
+  value     String?  @db.Text
+  blobData  Bytes?   @map("blob_data") @db.ByteA
+  blobMime  String?  @map("blob_mime") @db.VarChar(50)
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("app_settings")
+}
