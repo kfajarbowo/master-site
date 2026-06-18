@@ -352,11 +352,23 @@ function renderDetail(site) {
 
 	// Build image section
 	const imageHtml = site.hasImage
-		? `<div class="site-image-hero" onclick="openLightbox('${site.imageUrl}', '${esc(site.siteName)}')">
+		? `<div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:12px;">
+			<div style="font-weight:600; font-size:1.1rem; color: var(--text-1);">Gambar Site</div>
+			<button class="tbl-btn" onclick="openImageUploadModal('${site.siteCode}', '${esc(site.siteName)}', true)">
+				${iconEdit()} Ganti Gambar
+			</button>
+		   </div>
+		   <div class="site-image-hero" onclick="openLightbox('${site.imageUrl}', '${esc(site.siteName)}')">
 			<img src="${site.imageUrl}" alt="${esc(site.siteName)}" loading="lazy">
 			<div class="img-overlay"><span>${iconZoom()} Klik untuk memperbesar</span></div>
 		   </div>`
-		: `<div class="site-image-placeholder">
+		: `<div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:12px;">
+			<div style="font-weight:600; font-size:1.1rem; color: var(--text-1);">Gambar Site</div>
+			<button class="tbl-btn" onclick="openImageUploadModal('${site.siteCode}', '${esc(site.siteName)}', false)">
+				${iconUpload()} Upload Gambar
+			</button>
+		   </div>
+		   <div class="site-image-placeholder">
 			${iconImagePlaceholder()}
 			<span>Belum ada gambar untuk site ini</span>
 		   </div>`;
@@ -387,29 +399,7 @@ function renderDetail(site) {
 
       ${imageHtml}
 
-      <div class="site-logo-section">
-        <div class="site-logo-preview">
-          ${site.hasLogo
-            ? `<img src="${site.logoUrl}" alt="Logo ${esc(site.siteName)}">`
-            : iconLogoPlaceholder()
-          }
-        </div>
-        <div class="site-logo-info">
-          <div class="site-logo-label">Logo Site</div>
-          <div class="site-logo-status">
-            ${site.hasLogo
-              ? `<span class="has-logo">✓ Logo tersedia</span>`
-              : `Belum ada logo untuk site ini`
-            }
-          </div>
-          <div class="site-logo-actions">
-            <button class="tbl-btn" onclick="openLogoUploadModal('${site.siteCode}', '${esc(site.siteName)}', ${site.hasLogo})">
-              ${site.hasLogo ? iconEdit() + ' Ganti Logo' : iconUpload() + ' Upload Logo'}
-            </button>
-            ${site.hasLogo ? `<button class="tbl-btn" style="color:var(--red);border-color:#fecaca" onclick="deleteLogo('${site.siteCode}')">${iconTrash()} Hapus Logo</button>` : ''}
-          </div>
-        </div>
-      </div>
+      
 
       <div class="info-row">
         <div class="info-card"><div class="ic-label">Site ID</div><div class="ic-value cyan">${
@@ -1245,40 +1235,40 @@ function openAssignRegionModal(siteCode, currentRegionCode, currentRegionName) {
 }
 
 // ── Logo upload modal ────────────────────────────────────────────
-function openLogoUploadModal(siteCode, siteName, hasLogo) {
+function openImageUploadModal(siteCode, siteName, hasImage) {
 	const backdrop = document.createElement('div');
 	backdrop.className = 'modal-backdrop open';
 	backdrop.style.zIndex = '500';
 	backdrop.innerHTML = `
     <div class="modal" style="max-width:440px">
       <div class="modal-header">
-        <div class="modal-title">${hasLogo ? 'Ganti' : 'Upload'} Logo — ${esc(siteCode)}</div>
-        <button class="modal-close" id="logo-close">&times;</button>
+        <div class="modal-title">${hasImage ? 'Ganti' : 'Upload'} Gambar — ${esc(siteCode)}</div>
+        <button class="modal-close" id="img-close">&times;</button>
       </div>
-      <div id="logo-upload-container">
-        <div class="logo-upload-area" id="logo-drop-area">
+      <div id="img-upload-container">
+        <div class="logo-upload-area" id="img-drop-area">
           ${iconUpload()}
-          <div class="upload-text">Klik atau seret file logo ke sini</div>
+          <div class="upload-text">Klik atau seret file gambar ke sini</div>
           <div class="upload-hint">Format: JPEG, PNG, GIF, WebP, SVG — Maks 5MB</div>
         </div>
-        <input type="file" id="logo-file-input" accept="image/*" style="display:none">
+        <input type="file" id="img-file-input" accept="image/*" style="display:none">
       </div>
-      <div id="logo-preview-container" style="display:none"></div>
+      <div id="img-preview-container" style="display:none"></div>
       <div class="modal-footer">
-        <button class="btn btn-ghost" id="logo-cancel">Batal</button>
-        <button class="btn btn-primary" id="logo-save" disabled>
-          ${iconUpload()} Upload Logo
+        <button class="btn btn-ghost" id="img-cancel">Batal</button>
+        <button class="btn btn-primary" id="img-save" disabled>
+          ${iconUpload()} Upload Gambar
         </button>
       </div>
     </div>
   `;
 	document.body.appendChild(backdrop);
 
-	const dropArea = backdrop.querySelector('#logo-drop-area');
-	const fileInput = backdrop.querySelector('#logo-file-input');
-	const previewContainer = backdrop.querySelector('#logo-preview-container');
-	const uploadContainer = backdrop.querySelector('#logo-upload-container');
-	const saveBtn = backdrop.querySelector('#logo-save');
+	const dropArea = backdrop.querySelector('#img-drop-area');
+	const fileInput = backdrop.querySelector('#img-file-input');
+	const previewContainer = backdrop.querySelector('#img-preview-container');
+	const uploadContainer = backdrop.querySelector('#img-upload-container');
+	const saveBtn = backdrop.querySelector('#img-save');
 	let selectedFile = null;
 
 	// Click to browse
@@ -1323,10 +1313,10 @@ function openLogoUploadModal(siteCode, siteName, hasLogo) {
 						<div class="file-name">${esc(file.name)}</div>
 						<div class="file-size">${(file.size / 1024).toFixed(1)} KB</div>
 					</div>
-					<button class="tbl-btn" id="logo-change-file">Ganti</button>
+					<button class="tbl-btn" id="img-change-file">Ganti</button>
 				</div>
 			`;
-			previewContainer.querySelector('#logo-change-file').addEventListener('click', () => {
+			previewContainer.querySelector('#img-change-file').addEventListener('click', () => {
 				selectedFile = null;
 				uploadContainer.style.display = '';
 				previewContainer.style.display = 'none';
@@ -1340,8 +1330,8 @@ function openLogoUploadModal(siteCode, siteName, hasLogo) {
 
 	// Close modal
 	const closeModal = () => backdrop.remove();
-	backdrop.querySelector('#logo-close').addEventListener('click', closeModal);
-	backdrop.querySelector('#logo-cancel').addEventListener('click', closeModal);
+	backdrop.querySelector('#img-close').addEventListener('click', closeModal);
+	backdrop.querySelector('#img-cancel').addEventListener('click', closeModal);
 	backdrop.addEventListener('click', (e) => {
 		if (e.target === backdrop) closeModal();
 	});
@@ -1354,9 +1344,9 @@ function openLogoUploadModal(siteCode, siteName, hasLogo) {
 
 		try {
 			const formData = new FormData();
-			formData.append('logo', selectedFile);
+			formData.append('image', selectedFile);
 
-			const res = await fetch(`${API_BASE}/sites/${siteCode}/logo`, {
+			const res = await fetch(`${API_BASE}/sites/${siteCode}`, {
 				method: 'PUT',
 				credentials: 'same-origin',
 				body: formData,
@@ -1369,7 +1359,7 @@ function openLogoUploadModal(siteCode, siteName, hasLogo) {
 			if (!res.ok) throw new Error(body.message || `HTTP ${res.status}`);
 
 			closeModal();
-			toast('Logo berhasil diupload!');
+			toast('Gambar berhasil diupload!');
 
 			// Reload data
 			const { data, meta } = await api('/sites?includeRegion=true');
@@ -1382,30 +1372,9 @@ function openLogoUploadModal(siteCode, siteName, hasLogo) {
 		} catch (err) {
 			toast(err.message, 'err');
 			saveBtn.disabled = false;
-			saveBtn.innerHTML = `${iconUpload()} Upload Logo`;
+			saveBtn.innerHTML = `${iconUpload()} Upload Gambar`;
 		}
 	});
-}
-
-async function deleteLogo(siteCode) {
-	const confirmed = confirm(`Hapus logo untuk site ${siteCode}?`);
-	if (!confirmed) return;
-
-	try {
-		await api(`/sites/${siteCode}/logo`, { method: 'DELETE' });
-		toast('Logo berhasil dihapus!');
-
-		// Reload data
-		const { data, meta } = await api('/sites?includeRegion=true');
-		allSites = data;
-		renderSidebar(filtered());
-		if (activeCode === siteCode) {
-			const { data: siteData } = await api(`/sites/${siteCode}?includeRegion=true`);
-			renderDetail(siteData);
-		}
-	} catch (err) {
-		toast(err.message, 'err');
-	}
 }
 
 // ── Global Logo ──────────────────────────────────────────────────
