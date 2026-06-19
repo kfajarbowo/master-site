@@ -249,7 +249,7 @@ async function createSite(body, imageData = null, imageMime = null) {
 		const provided = ips?.find(ip => ip.appKey === at.key);
 		return {
 			appTypeId: at.id,
-			ipAddress: provided?.ipAddress || '0.0.0.0',
+			ipAddress: provided?.ipAddress || provided?.ip || '0.0.0.0',
 			subnet: provided?.subnet || '/27',
 			port: provided?.port ?? null,
 			note: provided?.note ?? null,
@@ -324,6 +324,25 @@ async function updateSite(
 			region: { select: { regionCode: true, regionName: true } },
 		},
 	});
+
+	if (body.ips && Array.isArray(body.ips)) {
+		const appTypes = await prisma.appType.findMany();
+		const updatePromises = body.ips.map(ipData => {
+			const at = appTypes.find(a => a.key === ipData.appKey);
+			if (!at) return Promise.resolve();
+			return prisma.siteIp.updateMany({
+				where: { siteId: site.id, appTypeId: at.id },
+				data: {
+					ipAddress: (ipData.ipAddress || ipData.ip) ?? undefined,
+					subnet: ipData.subnet ?? undefined,
+					port: ipData.port !== undefined ? ipData.port : undefined,
+					note: ipData.note !== undefined ? ipData.note : undefined,
+				}
+			});
+		});
+		await Promise.all(updatePromises);
+	}
+
 	return {
 		siteCode: updated.siteCode,
 		siteName: updated.siteName,

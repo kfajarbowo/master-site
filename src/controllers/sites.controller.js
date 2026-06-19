@@ -104,6 +104,13 @@ async function updateSite(req, res, next) {
 	try {
 		// Multer may convert body fields to strings; parse JSON fields if needed
 		const body = req.body;
+		if (typeof body.ips === 'string') {
+			try {
+				body.ips = JSON.parse(body.ips);
+			} catch {
+				body.ips = undefined;
+			}
+		}
 		if (typeof body.regionId === 'string') {
 			body.regionId = parseInt(body.regionId, 10) || undefined;
 		}

@@ -259,6 +259,95 @@
 			</div>
 		</div>
 
+		<!-- EDIT SITE MODAL -->
+		<div class="modal-backdrop" id="edit-site-modal" role="dialog" aria-modal="true">
+			<div class="modal modal-lg">
+				<div class="modal-header">
+					<div class="modal-title">Edit Keseluruhan Site</div>
+					<button class="modal-close" onclick="closeEditSiteModal()" title="Tutup">
+						&times;
+					</button>
+				</div>
+				<form id="edit-site-form" onsubmit="submitEditSite(event)">
+					<input type="hidden" id="edit-site-full-code" />
+					<div class="form-row">
+						<div class="form-group">
+							<label class="form-label" for="edit-site-name"
+								>Nama Site <span style="color: var(--red)">*</span></label
+							>
+							<input
+								class="form-input"
+								id="edit-site-name-full"
+								type="text"
+								placeholder="Site 23"
+								required
+								autocomplete="off"
+							/>
+						</div>
+						<div class="form-group">
+							<label class="form-label" for="edit-site-block-ip"
+								>Block IP <span style="color: var(--red)">*</span></label
+							>
+							<input
+								class="form-input"
+								id="edit-site-block-ip-full"
+								type="text"
+								placeholder="172.27.2.192/27"
+								required
+								autocomplete="off"
+							/>
+							<div class="form-hint">Contoh: 172.27.2.192/27</div>
+							<div class="form-err" id="err-edit-site-block-ip">
+								Format Block IP tidak valid
+							</div>
+						</div>
+					</div>
+					<div class="form-row">
+						<div class="form-group">
+							<label class="form-label" for="edit-site-description">Deskripsi</label>
+							<input
+								class="form-input"
+								id="edit-site-description-full"
+								type="text"
+								placeholder="Opsional"
+								autocomplete="off"
+							/>
+						</div>
+						<div class="form-group">
+							<label class="form-label" for="edit-site-region">Region</label>
+							<select class="form-input region-select-modal" id="edit-site-region-full">
+								<option value="">— Tanpa Region —</option>
+							</select>
+							<div class="form-hint">Assign site ke region (opsional)</div>
+						</div>
+					</div>
+
+					<div class="section-header" style="margin-top: 12px; margin-bottom: 8px">
+						<div class="section-bar"></div>
+						<div class="section-title">IP Address per Aplikasi</div>
+					</div>
+					<div class="form-hint" style="margin-bottom: 8px">
+						Update IP address untuk setiap aplikasi. Kosongkan untuk <code>0.0.0.0</code>.
+					</div>
+					<div id="edit-site-ips-list" class="create-ips-list"></div>
+
+					<div class="modal-footer">
+						<button type="button" class="btn btn-ghost" onclick="closeEditSiteModal()">
+							Batal
+						</button>
+						<button type="submit" class="btn btn-primary" id="btn-edit-site">
+							<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+								<path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z" />
+								<polyline points="17 21 17 13 7 13 7 21" />
+								<polyline points="7 3 7 8 15 8" />
+							</svg>
+							Simpan Perubahan
+						</button>
+					</div>
+				</form>
+			</div>
+		</div>
+
 		<!-- EDIT IP MODAL -->
 		<div class="modal-backdrop" id="edit-modal" role="dialog" aria-modal="true">
 			<div class="modal">

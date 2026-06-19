@@ -390,6 +390,7 @@ function renderDetail(site) {
             Region
           </button>
           <button class="btn btn-ghost" onclick="copyAllIPs()">${iconCopy()} Salin Semua</button>
+          <button class="btn btn-ghost" onclick="openEditSiteModal()">${iconEdit()} Edit Keseluruhan</button>
           <button class="btn btn-danger" onclick="deleteSite('${
 						site.siteCode
 					}','${esc(site.siteName)}')">${iconTrash()} Hapus Site</button>
@@ -747,6 +748,133 @@ async function submitCreate(e) {
 	} finally {
 		btn.disabled = false;
 		btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Buat Site`;
+	}
+}
+
+// ── Edit Site modal ─────────────────────────────────────────────
+function openEditSiteModal() {
+	const site = window.__currentSite;
+	if (!site) return;
+
+	document.getElementById('edit-site-full-code').value = site.siteCode;
+	document.getElementById('edit-site-name-full').value = site.siteName;
+	document.getElementById('edit-site-block-ip-full').value = site.blockIp;
+	document.getElementById('edit-site-description-full').value = site.description || '';
+	document.getElementById('err-edit-site-block-ip').classList.remove('show');
+	document.getElementById('edit-site-block-ip-full').classList.remove('err');
+
+	const regionSelect = document.getElementById('edit-site-region-full');
+	regionSelect.innerHTML = '<option value="">— Tanpa Region —</option>';
+	let regionMatchedId = '';
+	allRegions.forEach(r => {
+		const opt = document.createElement('option');
+		opt.value = r.id;
+		opt.textContent = `${r.regionCode} — ${r.regionName}`;
+		if (site.regionCode && r.regionCode === site.regionCode) {
+			regionMatchedId = r.id;
+		}
+		regionSelect.appendChild(opt);
+	});
+	regionSelect.value = regionMatchedId;
+
+	const list = document.getElementById('edit-site-ips-list');
+	if (appTypesList.length) {
+		list.innerHTML = appTypesList
+			.map(at => {
+				const existingIp = site.ips.find(i => i.appKey === at.key);
+				const ipVal = existingIp ? (existingIp.ip === '0.0.0.0' ? '' : existingIp.ip) : '';
+				const portVal = existingIp && existingIp.port ? existingIp.port : '';
+				return `
+      <div class="create-ip-row">
+        <div class="cip-app">
+          <span class="type-tag ${at.type === 'SERVER' ? 't-sv' : 't-ap'}">${at.type}</span>
+          <span class="cip-name">${esc(at.name)}</span>
+        </div>
+        <input class="form-input cip-ip" type="text" placeholder="IP Address" data-app-key="${at.key}" value="${ipVal}" autocomplete="off">
+        <input class="form-input cip-port" type="number" placeholder="Port" data-app-key="${at.key}" value="${portVal}" min="1" max="65535">
+      </div>
+    `;
+			})
+			.join('');
+	}
+
+	document.getElementById('edit-site-modal').classList.add('open');
+}
+
+function closeEditSiteModal() {
+	document.getElementById('edit-site-modal').classList.remove('open');
+}
+
+document.getElementById('edit-site-modal').addEventListener('click', function (e) {
+	if (e.target === this) closeEditSiteModal();
+});
+
+async function submitEditSite(e) {
+	e.preventDefault();
+	const siteCode = document.getElementById('edit-site-full-code').value;
+	const siteName = document.getElementById('edit-site-name-full').value.trim();
+	const blockIp = document.getElementById('edit-site-block-ip-full').value.trim();
+	const description = document.getElementById('edit-site-description-full').value.trim();
+	const regionId = document.getElementById('edit-site-region-full').value;
+	const regionIdInt = regionId ? parseInt(regionId, 10) : null;
+
+	const cidrRe = /^(\d{1,3}\.){3}\d{1,3}\/\d{1,2}$/;
+	if (!cidrRe.test(blockIp)) {
+		document.getElementById('err-edit-site-block-ip').classList.add('show');
+		document.getElementById('edit-site-block-ip-full').classList.add('err');
+		return;
+	}
+	document.getElementById('err-edit-site-block-ip').classList.remove('show');
+	document.getElementById('edit-site-block-ip-full').classList.remove('err');
+
+	const ips = [];
+	document.querySelectorAll('#edit-site-ips-list .create-ip-row').forEach(row => {
+		const ipInput = row.querySelector('.cip-ip');
+		const portInput = row.querySelector('.cip-port');
+		const appKey = ipInput.dataset.appKey;
+		const ipAddress = ipInput.value.trim();
+		const port = portInput.value.trim();
+		if (ipAddress) {
+			ips.push({
+				appKey,
+				ipAddress,
+				subnet: '/27',
+				port: port ? parseInt(port, 10) : null,
+			});
+		}
+	});
+
+	const btn = document.getElementById('btn-edit-site');
+	btn.disabled = true;
+	btn.textContent = 'Menyimpan...';
+
+	try {
+		await api(`/sites/${siteCode}`, {
+			method: 'PUT',
+			body: JSON.stringify({
+				siteName,
+				blockIp,
+				description: description || null,
+				regionId: regionIdInt,
+				ips,
+			}),
+		});
+
+		closeEditSiteModal();
+		toast('Site berhasil diperbarui!');
+		
+		const { data, meta } = await api('/sites?includeRegion=true');
+		allSites = data;
+		document.getElementById('hd-sites').textContent = meta.total;
+		document.getElementById('hd-total').textContent = meta.total * 8;
+		renderSidebar(filtered());
+		
+		selectSite(siteCode);
+	} catch (err) {
+		toast(err.message, 'err');
+	} finally {
+		btn.disabled = false;
+		btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z" /><polyline points="17 21 17 13 7 13 7 21" /><polyline points="7 3 7 8 15 8" /></svg> Simpan Perubahan`;
 	}
 }
 
