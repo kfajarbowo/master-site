@@ -57,6 +57,7 @@ async function getAllAppTypes(filters = {}) {
 			type: true,
 			sortOrder: true,
 			isHighlighted: true,
+			defaultPort: true,
 			_count: { select: { siteIps: true } },
 		},
 	});
@@ -67,6 +68,7 @@ async function getAllAppTypes(filters = {}) {
 		type: a.type,
 		sortOrder: a.sortOrder,
 		highlighted: a.isHighlighted,
+		defaultPort: a.defaultPort ?? null,
 		totalSites: a._count.siteIps,
 	}));
 }
@@ -105,7 +107,7 @@ async function getIpsByApp(rawAppKey, filters = {}) {
 				},
 			},
 			appType: {
-				select: { key: true, name: true, type: true, isHighlighted: true },
+				select: { key: true, name: true, type: true, isHighlighted: true, defaultPort: true },
 			},
 		},
 		orderBy: { site: { siteCode: 'asc' } },
@@ -127,7 +129,7 @@ async function getIpsByApp(rawAppKey, filters = {}) {
 			ip: ip.ipAddress,
 			subnet: ip.subnet,
 			fullIp: `${ip.ipAddress}${ip.subnet}`,
-			port: ip.port ?? null,
+			port: ip.port ?? ip.appType.defaultPort ?? null,
 			note: ip.note ?? null,
 		})),
 	};
@@ -155,7 +157,7 @@ async function getAppAtSite(rawAppKey, rawSiteCode) {
 				},
 			},
 			appType: {
-				select: { key: true, name: true, type: true, isHighlighted: true },
+				select: { key: true, name: true, type: true, isHighlighted: true, defaultPort: true },
 			},
 		},
 	});
@@ -182,7 +184,7 @@ async function getAppAtSite(rawAppKey, rawSiteCode) {
 		ip: siteIp.ipAddress,
 		subnet: siteIp.subnet,
 		fullIp: `${siteIp.ipAddress}${siteIp.subnet}`,
-		port: siteIp.port ?? null,
+		port: siteIp.port ?? siteIp.appType.defaultPort ?? null,
 		note: siteIp.note ?? null,
 	};
 }
@@ -209,7 +211,7 @@ async function quickLookup(rawAppKey, rawSiteCode) {
 		where: { site: { siteCode }, appType: { key: appKey } },
 		include: {
 			site: { select: { siteCode: true } },
-			appType: { select: { key: true } },
+			appType: { select: { key: true, defaultPort: true } },
 		},
 	});
 
@@ -220,14 +222,15 @@ async function quickLookup(rawAppKey, rawSiteCode) {
 		);
 	}
 
+	const port = siteIp.port ?? siteIp.appType.defaultPort ?? null;
 	return {
 		app: appKey,
 		site: siteCode,
 		ip: siteIp.ipAddress,
-		port: siteIp.port ?? null,
+		port,
 		subnet: siteIp.subnet,
 		fullIp: `${siteIp.ipAddress}${siteIp.subnet}`,
-		host: siteIp.port ? `${siteIp.ipAddress}:${siteIp.port}` : siteIp.ipAddress,
+		host: port ? `${siteIp.ipAddress}:${port}` : siteIp.ipAddress,
 	};
 }
 

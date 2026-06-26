@@ -150,6 +150,7 @@ async function main() {
 					type: at.type,
 					sortOrder: at.sortOrder,
 					isHighlighted: at.isHighlighted,
+					defaultPort: at.port,
 				},
 				create: {
 					key: at.key,
@@ -157,6 +158,7 @@ async function main() {
 					type: at.type,
 					sortOrder: at.sortOrder,
 					isHighlighted: at.isHighlighted,
+					defaultPort: at.port,
 				},
 			})
 		)

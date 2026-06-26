@@ -595,9 +595,9 @@ function openCreateModal() {
         <input class="form-input cip-ip" type="text" placeholder="IP Address" data-app-key="${
 					at.key
 				}" autocomplete="off">
-        <input class="form-input cip-port" type="number" placeholder="Port" data-app-key="${
+        <input class="form-input cip-port" type="number" placeholder="${at.defaultPort ? 'Default: ' + at.defaultPort : 'Port'}" data-app-key="${
 					at.key
-				}" min="1" max="65535">
+				}" value="${at.defaultPort || ''}" min="1" max="65535">
       </div>
     `
 			)
@@ -621,9 +621,9 @@ function openCreateModal() {
           <input class="form-input cip-ip" type="text" placeholder="IP Address" data-app-key="${
 						at.key
 					}" autocomplete="off">
-          <input class="form-input cip-port" type="number" placeholder="Port" data-app-key="${
+          <input class="form-input cip-port" type="number" placeholder="${at.defaultPort ? 'Default: ' + at.defaultPort : 'Port'}" data-app-key="${
 						at.key
-					}" min="1" max="65535">
+					}" value="${at.defaultPort || ''}" min="1" max="65535">
         </div>
       `
 					)
@@ -783,7 +783,7 @@ function openEditSiteModal() {
 			.map(at => {
 				const existingIp = site.ips.find(i => i.appKey === at.key);
 				const ipVal = existingIp ? (existingIp.ip === '0.0.0.0' ? '' : existingIp.ip) : '';
-				const portVal = existingIp && existingIp.port ? existingIp.port : '';
+				const portVal = existingIp && existingIp.port ? existingIp.port : (at.defaultPort || '');
 				return `
       <div class="create-ip-row">
         <div class="cip-app">
@@ -791,7 +791,7 @@ function openEditSiteModal() {
           <span class="cip-name">${esc(at.name)}</span>
         </div>
         <input class="form-input cip-ip" type="text" placeholder="IP Address" data-app-key="${at.key}" value="${ipVal}" autocomplete="off">
-        <input class="form-input cip-port" type="number" placeholder="Port" data-app-key="${at.key}" value="${portVal}" min="1" max="65535">
+        <input class="form-input cip-port" type="number" placeholder="${at.defaultPort ? 'Default: ' + at.defaultPort : 'Port'}" data-app-key="${at.key}" value="${portVal}" min="1" max="65535">
       </div>
     `;
 			})

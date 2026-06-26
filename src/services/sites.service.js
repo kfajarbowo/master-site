@@ -25,7 +25,7 @@ function formatSiteDetail(site, includeRegion = false) {
 			ip: ip.ipAddress,
 			subnet: ip.subnet,
 			fullIp: `${ip.ipAddress}${ip.subnet}`,
-			port: ip.port ?? null,
+			port: ip.port ?? ip.appType.defaultPort ?? null,
 			note: ip.note ?? null,
 		})),
 	};
@@ -50,6 +50,7 @@ const IP_INCLUDE = {
 					type: true,
 					isHighlighted: true,
 					sortOrder: true,
+					defaultPort: true,
 				},
 			},
 		},
@@ -138,6 +139,7 @@ async function getSiteIps(rawCode) {
 							type: true,
 							isHighlighted: true,
 							sortOrder: true,
+							defaultPort: true,
 						},
 					},
 				},
@@ -159,7 +161,7 @@ async function getSiteIps(rawCode) {
 			ip: ip.ipAddress,
 			subnet: ip.subnet,
 			fullIp: `${ip.ipAddress}${ip.subnet}`,
-			port: ip.port ?? null,
+			port: ip.port ?? ip.appType.defaultPort ?? null,
 		})),
 	};
 }
@@ -178,7 +180,7 @@ async function getSiteIpByAppKey(rawCode, rawAppKey) {
 				},
 			},
 			appType: {
-				select: { key: true, name: true, type: true, isHighlighted: true },
+				select: { key: true, name: true, type: true, isHighlighted: true, defaultPort: true },
 			},
 		},
 	});
@@ -201,7 +203,7 @@ async function getSiteIpByAppKey(rawCode, rawAppKey) {
 		ip: siteIp.ipAddress,
 		subnet: siteIp.subnet,
 		fullIp: `${siteIp.ipAddress}${siteIp.subnet}`,
-		port: siteIp.port ?? null,
+		port: siteIp.port ?? siteIp.appType.defaultPort ?? null,
 		note: siteIp.note ?? null,
 	};
 }
@@ -251,7 +253,7 @@ async function createSite(body, imageData = null, imageMime = null) {
 			appTypeId: at.id,
 			ipAddress: provided?.ipAddress || provided?.ip || '0.0.0.0',
 			subnet: provided?.subnet || '/27',
-			port: provided?.port ?? null,
+			port: provided?.port ?? at.defaultPort ?? null,
 			note: provided?.note ?? null,
 		};
 	});
@@ -366,7 +368,7 @@ async function updateSiteIp(rawCode, rawAppKey, body) {
 		include: {
 			site: { select: { siteCode: true, siteName: true } },
 			appType: {
-				select: { key: true, name: true, type: true, isHighlighted: true },
+				select: { key: true, name: true, type: true, isHighlighted: true, defaultPort: true },
 			},
 		},
 	});
@@ -396,7 +398,7 @@ async function updateSiteIp(rawCode, rawAppKey, body) {
 		ip: updated.ipAddress,
 		subnet: updated.subnet,
 		fullIp: `${updated.ipAddress}${updated.subnet}`,
-		port: updated.port ?? null,
+		port: updated.port ?? siteIp.appType.defaultPort ?? null,
 		note: updated.note ?? null,
 	};
 }

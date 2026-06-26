@@ -25,6 +25,16 @@ function errorHandler(err, req, res, next) {
 		return errorResponse(res, err.message, 400);
 	}
 
+	// ── Handle Prisma errors ─────────────────────────────────────────────────
+	if (err.name === 'PrismaClientKnownRequestError') {
+		if (err.code === 'P2000') {
+			return errorResponse(res, 'Format gagal disimpan: Teks yang Anda masukkan terlalu panjang.', 400);
+		}
+		if (err.code === 'P2002') {
+			return errorResponse(res, 'Data tersebut sudah terdaftar di sistem (Duplikat). Harap gunakan yang lain.', 409);
+		}
+	}
+
 	const statusCode = err.statusCode || 500;
 	const message = err.message || 'Internal server error';
 

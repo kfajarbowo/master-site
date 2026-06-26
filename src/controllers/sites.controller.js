@@ -58,7 +58,7 @@ async function getSiteImage(req, res, next) {
 			return res.status(404).send('No image');
 		}
 		res.setHeader('Content-Type', imageMime || 'image/jpeg');
-		res.setHeader('Cache-Control', 'public, max-age=86400');
+		res.setHeader('Cache-Control', 'no-cache');
 		return res.send(imageData);
 	} catch (err) {
 		next(err);
@@ -78,7 +78,11 @@ async function createSite(req, res, next) {
 			}
 		}
 		if (typeof body.regionId === 'string') {
-			body.regionId = parseInt(body.regionId, 10) || undefined;
+			if (body.regionId === 'null' || body.regionId === '') {
+				body.regionId = null;
+			} else {
+				body.regionId = parseInt(body.regionId, 10) || undefined;
+			}
 		}
 
 		const { siteCode, siteName, blockIp, description } = body;
@@ -112,7 +116,11 @@ async function updateSite(req, res, next) {
 			}
 		}
 		if (typeof body.regionId === 'string') {
-			body.regionId = parseInt(body.regionId, 10) || undefined;
+			if (body.regionId === 'null' || body.regionId === '') {
+				body.regionId = null;
+			} else {
+				body.regionId = parseInt(body.regionId, 10) || undefined;
+			}
 		}
 
 		// Extract image data from multer memoryStorage buffer
